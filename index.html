@@ -204,6 +204,30 @@ button.mov{cursor:pointer}
 .mitem .s{display:block;font-size:13px;color:var(--text2)}
 .mitem button{margin-left:auto;border:0;background:none;color:var(--text2);cursor:pointer;width:40px;height:40px;font-size:22px;flex:none}
 .caja{border:1px solid var(--line);border-radius:12px;padding:4px 12px 12px;margin-top:12px}
+.mk{display:inline-grid;place-items:center;width:18px;height:18px;border-radius:4px;border:1.5px solid var(--text2);color:var(--text2);font-size:11px;font-weight:700;flex:none;line-height:1}
+.tag{display:inline-block;font-size:12px;padding:1px 8px;border-radius:999px;background:var(--tierra-bg);color:var(--tierra);margin-left:6px;vertical-align:1px}
+.taller{display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:13px 14px;border:1.5px solid var(--tierra);border-radius:14px;background:var(--tierra-bg);color:var(--text);cursor:pointer;font:inherit;margin:0 0 10px}
+.taller .n{font-weight:500}
+.taller .s{font-size:13px;color:var(--text2)}
+.taller .q{margin-left:auto;font-size:14px;color:var(--tierra);white-space:nowrap}
+.salir{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;margin:20px 0 0;padding:13px;border-radius:12px;border:1.5px solid var(--campo);background:var(--card);color:var(--campo);font:inherit;font-size:16px;font-weight:500;cursor:pointer;position:relative}
+.salir svg{width:20px;height:20px}
+.salir .pto{width:10px;height:10px;border-radius:50%;background:var(--rojo);position:absolute;top:9px;right:12px}
+.salir + .rapidos{margin-top:10px}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:4px 14px 12px}
+.rut{display:flex;align-items:center;gap:8px;border-top:1px solid var(--line)}
+.rut:first-child{border-top:0}
+.chk{display:flex;align-items:center;gap:12px;flex:1;width:100%;padding:12px 2px;border:0;background:none;font:inherit;color:inherit;text-align:left;cursor:pointer}
+.hoja .chk + .chk{border-top:1px solid var(--line)}
+.chk .box{width:24px;height:24px;border-radius:6px;border:2px solid var(--line);display:grid;place-items:center;flex:none;color:transparent}
+.chk.on .box{background:var(--campo);border-color:var(--campo);color:var(--campo-on)}
+.chk.fallo .box{background:var(--stop);border-color:var(--stop);color:#fff}
+.chk .s{display:block;font-size:13px;color:var(--text2)}
+.chk .der{margin-left:auto;font-size:13px;color:var(--text2);white-space:nowrap;text-align:right}
+.falla{border:1px solid var(--line);background:none;color:var(--text2);border-radius:10px;padding:8px 10px;font:inherit;font-size:13px;cursor:pointer;flex:none}
+.ventana{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--text2);margin:4px 2px 10px}
+.ventana button{width:40px;height:40px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--text);font-size:20px;cursor:pointer}
+.ventana b{color:var(--text);font-weight:500;min-width:56px;text-align:center}
 @media (prefers-reduced-motion: reduce){*{transition:none!important}}
 </style>
 </head>
@@ -267,7 +291,14 @@ function guardar(){ try{ localStorage.setItem(CLAVE, JSON.stringify(S)); }catch(
 if(!S.hechos) S.hechos = [];
 if(!S.deposito) S.deposito = {capacidad:2000, movs:[]};
 if(S.umbralDesajuste==null) S.umbralDesajuste = 5;
-S.tractores.forEach(t=>{ if(t.horometroAlta==null) t.horometroAlta = t.horometro; });
+S.tractores.forEach(t=>{ if(t.horometroAlta==null) t.horometroAlta = t.horometro; if(!t.rutina) t.rutina = []; });
+if(S.ventanaTaller==null) S.ventanaTaller = 100;
+if(S.ventanaSalir==null) S.ventanaSalir = 10;
+if(S.diasAmarillo==null) S.diasAmarillo = 30;
+if(!S.rutinaDia) S.rutinaDia = {};
+if(!S.averias) S.averias = [];
+S.mants.forEach(m=>{ if(!m.quien) m.quien='yo'; if(m.fecha==null) m.fecha=Date.now(); if(m.meses===undefined) m.meses=null; });
+try{ localStorage.setItem(CLAVE, JSON.stringify(S)); }catch(e){}
 
 const $ = s => document.querySelector(s);
 const tractor = id => S.tractores.find(t=>t.id===id);
@@ -294,6 +325,7 @@ function cuentaEnTramo(m, tramo){
 }
 
 function horasRestantes(m){
+  if(!m.intervalo) return Infinity;
   if(m.reloj==='motor'){
     const t = tractor(m.maq);
     return m.intervalo - (t.horometro - m.ultima);
@@ -303,14 +335,53 @@ function horasRestantes(m){
   if(tr && !tr.fin && cuentaEnTramo(m,tr)) acum += Math.max(0,(Date.now()-Math.max(tr.inicio, m.desde||0))/H);
   return m.intervalo - acum;
 }
-
-const umbralDe = m => Math.min(S.umbralAmarillo, m.intervalo/4);
+const DIA = 86400000;
+function venceFecha(m){ if(!m.meses) return null; const d=new Date(m.fecha||Date.now()); d.setMonth(d.getMonth()+m.meses); return d.getTime(); }
+function diasRestantes(m){ const v=venceFecha(m); return v==null ? Infinity : (v-Date.now())/DIA; }
+const umbralDe = m => m.intervalo ? Math.min(S.umbralAmarillo, m.intervalo/4) : 0;
+const umbralDias = m => m.meses ? Math.min(S.diasAmarillo, m.meses*30.4/4) : 0;
 function estadoMant(m){
-  const r = horasRestantes(m);
-  if(r < 0) return 'r';
-  if(r < umbralDe(m)) return 'y';
+  const r = horasRestantes(m), d = diasRestantes(m);
+  if(r < 0 || d < 0) return 'r';
+  if(r < umbralDe(m) || d < umbralDias(m)) return 'y';
   return '';
 }
+function urgencia(m){
+  const r = horasRestantes(m), d = diasRestantes(m);
+  return Math.min(isFinite(r) ? r/m.intervalo : Infinity, isFinite(d) ? d/(m.meses*30.4) : Infinity);
+}
+const info = m => ({m, r:horasRestantes(m), d:diasRestantes(m), e:estadoMant(m), u:urgencia(m)});
+const porUrgencia = (a,b) => a.u - b.u;
+/* aviso "M": lo que va por horas de trabajo pero el manual pide por horómetro */
+function restanManual(m){
+  if(m.reloj!=='trabajo' || !m.manualH || m.ultimaHoro==null) return Infinity;
+  const t = tractor(m.maq); if(!t) return Infinity;
+  return m.manualH - (t.horometro - m.ultimaHoro);
+}
+const marcaM = m => restanManual(m) <= 0;
+const textoManual = m => { const r=restanManual(m); return r<=0 ? 'le tocaría ya' : `faltan ${fmtH(r)} h de horómetro`; };
+const esc = x => String(x==null?'':x).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
+function fmtDias(d){ const a=Math.abs(d); if(a<45){ const n=Math.max(1,Math.round(a)); return n===1?'1 día':`${n} días`; } const n=Math.round(a/30.4); return n===1?'1 mes':`${n} meses`; }
+const fmtMeses = n => n%12===0 ? (n===12?'1 año':`${n/12} años`) : (n===1?'1 mes':`${n} meses`);
+function cadaTexto(m){
+  const p = [];
+  if(m.intervalo) p.push(`${fmtH(m.intervalo)} h`);
+  if(m.meses) p.push(fmtMeses(m.meses));
+  return 'cada ' + p.join(' o ');
+}
+function textoMant(m){
+  const r = horasRestantes(m), d = diasRestantes(m);
+  if(r < 0 && (!isFinite(d) || d >= 0 || -r/m.intervalo >= -d/(m.meses*30.4))) return `pasado ${fmtH(-r)} h`;
+  if(d < 0) return `pasado ${fmtDias(d)}`;
+  if(isFinite(r) && isFinite(d)) return `faltan ${fmtH(r)} h o ${fmtDias(d)}`;
+  if(isFinite(r)) return `faltan ${fmtH(r)} h`;
+  if(isFinite(d)) return `faltan ${fmtDias(d)}`;
+  return 'sin plazo';
+}
+const hoyISO = () => isoDe(Date.now());
+function isoDe(ms){ const d=new Date(ms); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function fechaDe(v){ if(!v || v===hoyISO()) return Date.now(); return new Date(v+'T12:00').getTime(); }
+const fechaCorta = ms => new Date(ms).toLocaleDateString('es-ES',{day:'numeric',month:'short',year:'numeric'});
 
 function cerrarTramo(fin){
   const ses = S.sesion; if(!ses) return;
@@ -324,8 +395,9 @@ function abrirTramo(modo, inicio){
   S.sesion.tramos.push({modo, tractor:S.sel.tractor, apero:S.sel.apero, inicio, fin:null});
 }
 
-function pulsarModo(modo){
+function pulsarModo(modo, sinPreguntar){
   const ahora = Date.now();
+  if(!S.sesion && !sinPreguntar && rutinaPendiente(tractor(S.sel.tractor))){ hojaPreguntaRutina(modo); return; }
   if(!S.sesion){
     S.sesion = {inicio:ahora, tractor:S.sel.tractor, tramos:[]};
     abrirTramo(modo, ahora);
@@ -452,8 +524,11 @@ function hojaHorometro(){
         const v = parseFloat($('#h').value);
         if(isNaN(v)){ $('#err').textContent='Escribe las horas del horómetro.'; return; }
         const aplicar = ()=>{
+          const antes = S.mants.filter(m=>m.maq===t.id && m.manualH && !marcaM(m));
           S.lecturas.push({fecha:Date.now(), tractor:t.id, horas:v, origen:'mano'});
-          t.horometro = v; guardar(); cerrarHoja(); pintar(); toast('Horómetro actualizado');
+          t.horometro = v; guardar(); pintar();
+          const nuevos = antes.filter(m=>marcaM(m) && !m.mAviso);
+          if(nuevos.length) hojaAvisoM(nuevos.map(m=>m.id)); else { cerrarHoja(); toast('Horómetro actualizado'); }
         };
         if(v < t.horometro || v - t.horometro > 24){
           const motivo = v < t.horometro ? `es menor que la anterior (${fmtH(t.horometro)} h)` : `sube ${fmtH(v-t.horometro)} h desde la última`;
@@ -527,9 +602,9 @@ function pintarInicio(){
   }
   const tr = S.sesion && S.sesion.tramos[S.sesion.tramos.length-1];
   const modo = tr ? tr.modo : null;
-  const relevantes = S.mants.filter(m=>m.maq===t.id || (a && m.maq===a.id))
-    .map(m=>({m, r:horasRestantes(m), e:estadoMant(m)}))
-    .filter(x=>x.e).sort((x,y)=>x.r-y.r).slice(0,3);
+  const relevantes = S.mants.filter(m=>(m.maq===t.id || (a && m.maq===a.id)) && m.quien!=='taller')
+    .map(info).filter(x=>x.e || marcaM(x.m)).sort(porUrgencia).slice(0,3);
+  const tarjetas = [t.id, a && a.id].filter(Boolean).map(tarjetaTaller).join('');
   $('#vista').innerHTML = `
     <section class="maquinas" aria-label="Máquina y apero">
       <button class="maq" id="bt"><span class="ico t">${I.tractor}</span><span><span class="n">${t.nombre}</span><br><span class="s">Horómetro ${fmtH(t.horometro)} h</span></span></button>
@@ -543,17 +618,21 @@ function pintarInicio(){
       <button class="stop ${S.sesion?'on':''}" id="bs" aria-label="Parar sesión">STOP</button>
       <button class="btn campo ${modo==='campo'?'on':''} ${modo==='carretera'?'tenue':''}" id="bf" aria-pressed="${modo==='campo'}">${I.campo}Campo</button>
     </div>
+    <button class="salir" id="bsal">${I.tool}Antes de salir${rutinaPendiente(t)?'<span class="pto" aria-label="Rutina de hoy sin hacer"></span>':''}</button>
     <div class="rapidos">
       <button class="chip" id="bh">${I.cam}Horómetro</button>
       <button class="chip" id="br">${I.gas}Repostar</button>
     </div>
     <section class="avisos" aria-label="Avisos más urgentes">
       <h2>Avisos de lo que llevas puesto</h2>
-      ${relevantes.length ? relevantes.map(({m,r,e})=>`<div class="av"><span class="dot ${e}" aria-label="${e==='r'?'Pasado':'Inminente'}"></span><span>${m.nombre}<br><span style="font-size:13px;color:var(--text2)">${m.maq===t.id?t.nombre:a.nombre}</span></span><span class="q">${r<0?`pasado ${fmtH(-r)} h`:`faltan ${fmtH(r)} h`}</span></div>`).join('') : '<div class="vacio">Todo al día con esta máquina y este apero.</div>'}
+      ${tarjetas ? `<div style="padding-top:6px">${tarjetas}</div>` : ''}
+      ${relevantes.length ? relevantes.map(({m,e})=>`<div class="av"><span class="dot ${e||'n'}" aria-label="${e==='r'?'Pasado':e==='y'?'Inminente':''}"></span>${marcaM(m)?'<span class="mk" title="Según el manual ya tocaría">M</span>':''}<span>${m.nombre}<br><span style="font-size:13px;color:var(--text2)">${m.maq===t.id?t.nombre:a.nombre}${marcaM(m)?', manual: le tocaría ya':''}</span></span><span class="q">${textoMant(m)}</span></div>`).join('') : (tarjetas ? '' : '<div class="vacio">Todo al día con esta máquina y este apero.</div>')}
     </section>`;
   $('#bt').onclick=hojaTractor; $('#ba').onclick=hojaApero;
   $('#bc').onclick=()=>pulsarModo('carretera'); $('#bf').onclick=()=>pulsarModo('campo');
   $('#bs').onclick=hojaStop; $('#bh').onclick=hojaHorometro; $('#br').onclick=hojaRepostar;
+  $('#bsal').onclick=()=>irA('salir');
+  document.querySelectorAll('[data-taller]').forEach(b=>b.onclick=()=>hojaTaller(b.dataset.taller));
   tic();
 }
 
@@ -608,16 +687,19 @@ function pintarFicha(){
       <dt>Trabajo</dt><dd>${fmtH(horasTrabajo(id))} h</dd>
       <dt>Compatible con</dt><dd>${x.compatTodos ? 'Todos los tractores' : (x.compat||[]).map(t=>tractor(t)?.nombre).filter(Boolean).join(', ')}</dd>`;
   }
-  const ms = S.mants.filter(m=>m.maq===id).map(m=>({m, r:horasRestantes(m), e:estadoMant(m)})).sort((a,b)=>a.r-b.r);
+  const ms = S.mants.filter(m=>m.maq===id).map(info).sort(porUrgencia);
+  const faltanPlantilla = esT ? PLANTILLA.mants.filter(p=>!S.mants.some(m=>m.maq===id && m.nombre===p.nombre)).length : 0;
   $('#vista').innerHTML = `<div class="mes"><button class="flecha" id="vb" aria-label="Volver a Máquinas">${FL.izq}</button><h2>${x.nombre}</h2><button class="flecha" id="ren" aria-label="Cambiar nombre"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg></button></div>
     <section class="dep"><dl class="det" style="margin:0">${datos}</dl></section>
-    <h2 class="secc">Mantenimientos</h2>
-    <div class="lista">${ms.length ? ms.map(({m,r,e})=>`<button class="mov" data-m="${m.id}" style="align-items:center"><span class="dot ${e||'n'}"></span><span class="fx"><span class="n">${m.nombre}</span><br><span class="s" style="font-size:13px;color:var(--text2)">Cada ${m.intervalo} h, ${m.reloj==='motor'?'por horómetro':'por horas de trabajo'}</span></span><span class="der">${textoRestante(r)}</span></button>`).join('') : '<div class="vacio" style="padding:14px">Sin mantenimientos todavía.</div>'}</div>
-    <div class="acc3"><button class="chip" id="am">Añadir mantenimiento</button><button class="chip" id="dup">Duplicar</button></div>`;
+    <h2 class="secc">Mantenimientos (${ms.length})</h2>
+    <div class="lista">${ms.length ? ms.map(({m,e})=>`<button class="mov" data-m="${m.id}" style="align-items:center"><span class="dot ${e||'n'}"></span>${marcaM(m)?'<span class="mk" title="Según el manual ya tocaría">M</span>':''}<span class="fx"><span class="n">${m.nombre}${m.quien==='taller'?'<span class="tag">Taller</span>':''}</span><span class="s" style="font-size:13px;color:var(--text2)">${cadaTexto(m)}${m.intervalo?(m.reloj==='motor'?', por horómetro':', por horas de trabajo'):''}${m.manualH?`. Manual: ${textoManual(m)}`:''}</span></span><span class="der">${textoMant(m)}</span></button>`).join('') : '<div class="vacio" style="padding:14px">Sin mantenimientos todavía.</div>'}</div>
+    <div class="acc3"><button class="chip" id="am">Añadir mantenimiento</button><button class="chip" id="dup">Duplicar</button>${esT?`<button class="chip" id="rut">Rutina diaria (${(x.rutina||[]).length})</button>`:''}${esT&&faltanPlantilla?`<button class="chip" id="pla">Cargar plantilla ${PLANTILLA.corto}</button>`:''}</div>`;
   $('#vb').onclick=()=>history.back();
   $('#ren').onclick=()=>hojaRenombrar(id);
   $('#am').onclick=()=>hojaNuevoMant(id);
-  $('#dup').onclick=()=>asistente({paso:1, nombre:x.nombre+' (copia)', tipo:tipoDe(id), estado:'nueva', horometro:'', mants:S.mants.filter(m=>m.maq===id).map(m=>({nombre:m.nombre, intervalo:m.intervalo, reloj:m.reloj, cuenta:m.cuenta||'campo', ultimo:null}))});
+  $('#dup').onclick=()=>asistente({paso:1, nombre:x.nombre+' (copia)', tipo:tipoDe(id), estado:'nueva', horometro:'', rutina:[...(x.rutina||[])], mants:S.mants.filter(m=>m.maq===id).map(m=>({nombre:m.nombre, intervalo:m.intervalo, meses:m.meses, quien:m.quien, nota:m.nota, manualH:m.manualH, reloj:m.reloj, cuenta:m.cuenta||'campo', ultimo:null}))});
+  if($('#rut')) $('#rut').onclick=()=>hojaRutina(id);
+  if($('#pla')) $('#pla').onclick=()=>hojaCargarPlantilla(id);
   document.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>hojaDetalle(b.dataset.m));
 }
 
@@ -629,28 +711,53 @@ function hojaRenombrar(id){
   });
 }
 
+function segQuien(v){ return `<label class="f">Quién lo hace</label><div class="seg" id="mq"><button data-v="yo" class="${v!=='taller'?'sel':''}">Yo</button><button data-v="taller" class="${v==='taller'?'sel':''}">Taller</button></div>`; }
+function enlazarSeg(sel){ const c=$(sel); if(!c) return; c.querySelectorAll('button').forEach(b=>b.onclick=()=>c.querySelectorAll('button').forEach(x=>x.classList.toggle('sel',x===b))); }
+const valSeg = sel => $(sel) ? $(sel).querySelector('.sel').dataset.v : null;
+function leerMeses(){
+  const v = leerNum('mm');
+  if(v==null) return {v:null};
+  if(!(v>=1) || !Number.isInteger(v)) return {error:'Los meses deben ser un número entero, 1 o más.'};
+  return {v};
+}
+
 function formMant(tipo, estado, horometro){
   const conReloj = tipo==='autopropulsada';
   return `<label class="f" for="mn">Nombre</label><input id="mn" placeholder="Engrasar rótulas del eje">
     <label class="f" for="mi">Cada cuántas horas</label>${campoNumero('mi')}
+    <label class="f" for="mm">O cada cuántos meses (opcional)</label><input id="mm" type="number" inputmode="numeric" min="1" step="1" placeholder="Sin límite por tiempo">
+    <p class="nota" style="margin-top:2px">Avisa por lo primero que llegue. Deja las horas vacías si solo va por tiempo.</p>
+    ${segQuien('yo')}
     ${conReloj?`<label class="f">Cuenta por</label><div class="seg" id="mr"><button data-v="trabajo" class="sel">Horas de trabajo</button><button data-v="motor">Horómetro</button></div>`:''}
-    <div id="mcw"><label class="f" for="mc">Cuándo cuentan las horas</label><select id="mc">${opsCuenta(tipo).map(([v,t])=>`<option value="${v}">${t}</option>`).join('')}</select></div>
-    ${estado==='usada'?`<label class="f" for="mu" id="mul">Horas de trabajo desde la última vez</label>${campoNumero('mu',0)}`:''}`;
+    <div id="mcw"><label class="f" for="mc">Cuándo cuentan las horas</label><select id="mc">${opsCuenta(tipo).map(([v,t])=>`<option value="${v}">${t}</option>`).join('')}</select>
+      ${conReloj?`<label class="f" for="mh">Según el manual, cada (h de horómetro)</label>${campoNumero('mh')}<p class="nota" style="margin-top:2px">Opcional. Si el horómetro llega antes, te avisa con una M.</p>`:''}</div>
+    <label class="f" for="mo">Referencia del manual (opcional)</label><input id="mo" placeholder="Case IH: cada 600 h (pág. 7-43)">
+    ${estado==='usada'?`<label class="f" for="mu" id="mul">Horas de trabajo desde la última vez</label>${campoNumero('mu',0)}
+      <label class="f" for="mf">Fecha de la última vez</label><input id="mf" type="date" value="${hoyISO()}" max="${hoyISO()}"><p class="nota" style="margin-top:2px">Si no la sabes, deja hoy.</p>`:''}`;
 }
 function leerFormMant(tipo, estado, horometro){
-  const rel = $('#mr') ? $('#mr').querySelector('.sel').dataset.v : 'trabajo';
-  const n=$('#mn').value.trim(), iv=leerNum('mi');
+  const rel = $('#mr') ? valSeg('#mr') : 'trabajo';
+  const n=$('#mn').value.trim(), iv=leerNum('mi'), me=leerMeses();
   if(!n) return {error:'Escribe el nombre del mantenimiento.'};
-  if(!iv||iv<=0) return {error:'Indica cada cuántas horas toca.'};
-  let ultimo = null;
+  if(me.error) return {error:me.error};
+  if(iv==null && me.v==null) return {error:'Indica cada cuántas horas o cada cuántos meses toca.'};
+  if(iv!=null && !(iv>0)) return {error:'Las horas deben ser más de 0.'};
+  const mh = (rel==='trabajo' && $('#mh')) ? leerNum('mh') : null;
+  if(mh!=null && !(mh>0)) return {error:'Las horas del manual deben ser más de 0.'};
+  let ultimo = null, fecha = Date.now();
   if(estado==='usada'){
     ultimo = leerNum('mu');
-    if(ultimo==null||ultimo<0) return {error: rel==='motor'?'Indica el horómetro de la última vez.':'Indica las horas desde la última vez (0 si se acaba de hacer).'};
-    if(rel==='motor' && horometro!=null && ultimo>horometro) return {error:'No puede ser mayor que el horómetro actual.'};
+    if(iv!=null){
+      if(ultimo==null||ultimo<0) return {error: rel==='motor'?'Indica el horómetro de la última vez.':'Indica las horas desde la última vez (0 si se acaba de hacer).'};
+      if(rel==='motor' && horometro!=null && ultimo>horometro) return {error:'No puede ser mayor que el horómetro actual.'};
+    } else ultimo = rel==='motor' ? horometro : 0;
+    fecha = fechaDe($('#mf').value);
+    if(fecha > Date.now()+60000) return {error:'La fecha de la última vez no puede ser futura.'};
   }
-  return {nombre:n, intervalo:iv, reloj:rel, cuenta: rel==='motor'?null:$('#mc').value, ultimo};
+  return {nombre:n, intervalo:iv, meses:me.v, quien:valSeg('#mq'), nota:$('#mo').value.trim(), manualH:mh, reloj:rel, cuenta: rel==='motor'?null:$('#mc').value, ultimo, fecha};
 }
 function enlazarFormMant(estado, horometro){
+  enlazarSeg('#mq');
   if(!$('#mr')) return;
   $('#mr').querySelectorAll('button').forEach(b=>b.onclick=()=>{
     $('#mr').querySelectorAll('button').forEach(x=>x.classList.toggle('sel',x===b));
@@ -660,10 +767,15 @@ function enlazarFormMant(estado, horometro){
   });
 }
 function crearMant(maqId, d, horometro){
-  const m = {id:nuevoId('k'), maq:maqId, nombre:d.nombre, intervalo:d.intervalo, reloj:d.reloj};
+  const m = {id:nuevoId('k'), maq:maqId, nombre:d.nombre, intervalo:d.intervalo||null, meses:d.meses||null, quien:d.quien||'yo', nota:d.nota||'', reloj:d.reloj, fecha:d.fecha||Date.now()};
   if(d.reloj==='motor') m.ultima = d.ultimo!=null ? d.ultimo : horometro;
-  else { m.cuenta=d.cuenta; m.acum = d.ultimo!=null ? d.ultimo : 0; m.desde = Date.now(); }
+  else {
+    m.cuenta=d.cuenta; m.acum = d.ultimo!=null ? d.ultimo : 0; m.desde = Date.now();
+    const t = tractor(maqId);
+    if(t && d.manualH){ m.manualH = d.manualH; m.ultimaHoro = Math.max(0, t.horometro - m.acum); }
+  }
   S.mants.push(m);
+  return m;
 }
 
 function hojaNuevoMant(maqId){
@@ -676,13 +788,43 @@ function hojaNuevoMant(maqId){
 }
 
 function hojaEditarMant(id){
-  const m = S.mants.find(x=>x.id===id);
-  abrirHoja(`<h3>Editar mantenimiento</h3><label class="f" for="mn">Nombre</label><input id="mn" value="${m.nombre.replace(/"/g,'&quot;')}"><label class="f" for="mi">Cada cuántas horas</label>${campoNumero('mi', m.intervalo)}<div class="err" id="err"></div>
+  const m = S.mants.find(x=>x.id===id), t = tractor(m.maq), trab = m.reloj==='trabajo';
+  const acumVis = trab ? Math.round(m.acum*10)/10 : null;
+  abrirHoja(`<h3>Editar mantenimiento</h3>
+    <label class="f" for="mn">Nombre</label><input id="mn" value="${esc(m.nombre)}">
+    <label class="f" for="mi">Cada cuántas horas</label>${campoNumero('mi', m.intervalo??undefined)}
+    <label class="f" for="mm">O cada cuántos meses (opcional)</label><input id="mm" type="number" inputmode="numeric" min="1" step="1" placeholder="Sin límite por tiempo" value="${m.meses??''}">
+    ${segQuien(m.quien)}
+    ${trab && t ? `<label class="f" for="mh">Según el manual, cada (h de horómetro)</label>${campoNumero('mh', m.manualH??undefined)}` : ''}
+    <label class="f" for="mo">Referencia del manual (opcional)</label><input id="mo" value="${esc(m.nota)}">
+    <hr class="sep"><p class="peq">Última vez que se hizo</p>
+    <label class="f" for="mu">${trab ? 'Horas de trabajo desde entonces' : 'Horómetro cuando se hizo'}</label>${campoNumero('mu', trab ? acumVis : (m.ultima??undefined))}
+    <label class="f" for="mf">Fecha</label><input id="mf" type="date" value="${isoDe(m.fecha||Date.now())}" max="${hoyISO()}">
+    <div class="err" id="err"></div>
     <div class="acciones"><button id="no">Cancelar</button><button class="ok" id="si">Guardar</button></div><div class="acciones"><button class="peligro" id="del">Borrar mantenimiento</button></div>`,()=>{
-    enlazarCamaras();
+    enlazarCamaras(); enlazarSeg('#mq');
     $('#no').onclick=()=>cerrarHoja();
-    $('#si').onclick=()=>{ const n=$('#mn').value.trim(), iv=leerNum('mi'); if(!n){ $('#err').textContent='Escribe un nombre.'; return; } if(!iv||iv<=0){ $('#err').textContent='Indica cada cuántas horas toca.'; return; } m.nombre=n; m.intervalo=iv; guardar(); cerrarHoja(); pintar(); toast('Mantenimiento actualizado'); };
-    $('#del').onclick=()=>abrirHoja(`<h3>¿Borrar ${m.nombre}?</h3><p>Deja de contar y desaparece de los avisos. El historial de veces que se hizo se conserva.</p><div class="acciones"><button id="no2">Cancelar</button><button class="peligro" id="si2">Borrar</button></div>`,()=>{
+    $('#si').onclick=()=>{
+      const n=$('#mn').value.trim(), iv=leerNum('mi'), me=leerMeses(), u=leerNum('mu'), mh=$('#mh')?leerNum('mh'):null;
+      const err = t=>{ $('#err').textContent=t; };
+      if(!n) return err('Escribe un nombre.');
+      if(me.error) return err(me.error);
+      if(iv==null && me.v==null) return err('Indica cada cuántas horas o cada cuántos meses toca.');
+      if(iv!=null && !(iv>0)) return err('Las horas deben ser más de 0.');
+      if(mh!=null && !(mh>0)) return err('Las horas del manual deben ser más de 0.');
+      if(u!=null && u<0) return err('La última vez no puede ser negativa.');
+      if(!trab && t && u!=null && u>t.horometro) return err(`No puede ser mayor que el horómetro actual (${fmtH(t.horometro)} h).`);
+      const f = fechaDe($('#mf').value);
+      if(f > Date.now()+60000) return err('La fecha no puede ser futura.');
+      m.nombre=n; m.intervalo=iv; m.meses=me.v; m.quien=valSeg('#mq'); m.nota=$('#mo').value.trim(); m.fecha=f;
+      if(trab){
+        if(u!=null && Math.abs(u-acumVis)>0.05){ m.acum=u; m.desde=Date.now(); if(t) m.ultimaHoro=Math.max(0,t.horometro-u); }
+        if(t){ m.manualH = mh||null; if(m.manualH && m.ultimaHoro==null) m.ultimaHoro=Math.max(0,t.horometro-m.acum); }
+      } else if(u!=null) m.ultima=u;
+      else if(m.ultima==null && t) m.ultima=t.horometro;
+      guardar(); cerrarHoja(); pintar(); toast('Mantenimiento actualizado');
+    };
+    $('#del').onclick=()=>abrirHoja(`<h3>¿Borrar ${esc(m.nombre)}?</h3><p>Deja de contar y desaparece de los avisos. El historial de veces que se hizo se conserva.</p><div class="acciones"><button id="no2">Cancelar</button><button class="peligro" id="si2">Borrar</button></div>`,()=>{
       $('#no2').onclick=()=>cerrarHoja();
       $('#si2').onclick=()=>{ S.mants=S.mants.filter(x=>x.id!==id); guardar(); cerrarHoja(); pintar(); toast('Mantenimiento borrado'); };
     });
@@ -717,12 +859,20 @@ function asistente(base){
         };
     });
   } else if(w.paso===3){
-    const lista = w.mants.map((m,k)=>`<div class="mitem"><span>${m.nombre}<span class="s">Cada ${m.intervalo} h, ${m.reloj==='motor'?'horómetro':'horas de trabajo'}${w.estado==='usada'&&m.ultimo!=null?(m.reloj==='motor'?`, última a las ${fmtH(m.ultimo)} h`:`, hace ${fmtH(m.ultimo)} h`):''}${w.estado==='usada'&&m.ultimo==null?', falta la última vez':''}</span></span><button data-k="${k}" aria-label="Quitar ${m.nombre}">×</button></div>`).join('');
-    abrirHoja(`${cab('Mantenimientos')}<p>Añade los que quieras ahora; más adelante puedes añadir otros desde la ficha.</p>${lista?`<div>${lista}</div>`:''}
+    const lista = w.mants.map((m,k)=>`<div class="mitem"><span>${esc(m.nombre)}<span class="s">${cadaTexto(m)}${m.intervalo?(m.reloj==='motor'?', horómetro':', horas de trabajo'):''}${m.quien==='taller'?', taller':''}${w.estado==='usada'&&m.intervalo&&m.ultimo!=null&&!m.plantilla?(m.reloj==='motor'?`, última a las ${fmtH(m.ultimo)} h`:`, hace ${fmtH(m.ultimo)} h`):''}${w.estado==='usada'&&m.ultimo==null?', falta la última vez':''}</span></span><button data-k="${k}" aria-label="Quitar ${esc(m.nombre)}">×</button></div>`).join('');
+    const hayPlantilla = w.mants.some(m=>m.plantilla);
+    abrirHoja(`${cab('Mantenimientos')}<p>Añade los que quieras ahora; más adelante puedes añadir otros desde la ficha.</p>
+      ${w.tipo==='autopropulsada' && !hayPlantilla ? `<button class="chip" id="pl" style="width:100%;margin-bottom:10px">Cargar plantilla ${PLANTILLA.nombre}</button>` : ''}
+      ${hayPlantilla && w.estado==='usada' ? `<p class="nota">Los de la plantilla empiezan a contar desde hoy. Después, en la ficha, corrige la última vez de cada uno con Editar.</p>` : ''}
+      ${lista?`<div>${lista}</div>`:''}
       <div class="caja">${formMant(w.tipo, w.estado, horo())}<div class="err" id="err2"></div><div class="acciones"><button id="add">Añadir a la lista</button></div></div>
       ${pie(total()===3?'Guardar máquina':'Siguiente')}`,()=>{
         enlazarCamaras(); enlazarFormMant(w.estado, horo());
         document.querySelectorAll('.mitem button').forEach(b=>b.onclick=()=>{ w.mants.splice(+b.dataset.k,1); asistente(w); });
+        if($('#pl')) $('#pl').onclick=()=>{
+          PLANTILLA.mants.forEach(p=>{ if(!w.mants.some(m=>m.nombre===p.nombre)) w.mants.push({...p, plantilla:true, ultimo: w.estado==='usada' ? (p.reloj==='motor' ? horo() : 0) : null, fecha:Date.now()}); });
+          w.rutina = [...PLANTILLA.rutina]; asistente(w);
+        };
         $('#add').onclick=()=>{ const d=leerFormMant(w.tipo, w.estado, horo()); if(d.error){ $('#err2').textContent=d.error; return; } w.mants.push(d); asistente(w); };
         $('#atr').onclick=atras;
         $('#sig').onclick=()=>{
@@ -738,7 +888,7 @@ function asistente(base){
   }
   function finalizar(){
     const id = nuevoId(w.tipo==='autopropulsada'?'t':'a');
-    if(w.tipo==='autopropulsada'){ const h=parseFloat(w.horometro); S.tractores.push({id, nombre:w.nombre, horometro:h, horometroAlta:h}); if(!S.sel.tractor) S.sel.tractor=id; }
+    if(w.tipo==='autopropulsada'){ const h=parseFloat(w.horometro); S.tractores.push({id, nombre:w.nombre, horometro:h, horometroAlta:h, rutina:w.rutina||[]}); if(!S.sel.tractor) S.sel.tractor=id; }
     else { S.aperos.push({id, nombre:w.nombre, tipo:w.tipo, compatTodos:true, compat:[]}); if(!S.sel.apero) S.sel.apero=id; }
     w.mants.forEach(d=>crearMant(id, w.estado==='usada'?d:{...d, ultimo:null}, horo()));
     guardar(); cerrarHoja(); toast(`${w.nombre} añadido`);
@@ -1083,11 +1233,15 @@ function textoRestante(r){ return r<0 ? `pasado ${fmtH(-r)} h` : `faltan ${fmtH(
 
 function pintarMant(){
   const enMaq = m => filtroMaq==='todas' || m.maq===filtroMaq;
-  const cuenta = e => S.mants.filter(m=>enMaq(m) && estadoMant(m)===e).length;
-  const filas = S.mants.filter(enMaq).map(m=>({m, r:horasRestantes(m), e:estadoMant(m)}))
-    .filter(x=> filtroEstado==='todos' || (filtroEstado==='pasados'&&x.e==='r') || (filtroEstado==='inminentes'&&x.e==='y'))
-    .sort((a,b)=>a.r-b.r);
+  const todas = S.mants.filter(enMaq).map(info);
+  const cuenta = e => todas.filter(x=>x.e===e).length;
+  const pasa = x => filtroEstado==='todos' || (filtroEstado==='pasados'&&x.e==='r') || (filtroEstado==='inminentes'&&x.e==='y');
+  const filas = todas.filter(x=>x.m.quien!=='taller' && pasa(x)).sort(porUrgencia);
   const maqs = [...S.tractores, ...S.aperos];
+  const tarjetas = maqs.filter(x=>filtroMaq==='todas'||x.id===filtroMaq).map(x=>{
+    const l = tallerDe(x.id);
+    return (l.length && (filtroEstado==='todos' || l.some(pasa))) ? tarjetaTaller(x.id) : '';
+  }).join('');
   $('#vista').innerHTML = `
     <div class="filtros">
       <div class="seg" id="fe">
@@ -1097,17 +1251,19 @@ function pintarMant(){
       </div>
       <select id="fm" aria-label="Filtrar por máquina"><option value="todas">Todas las máquinas</option>${maqs.map(x=>`<option value="${x.id}" ${x.id===filtroMaq?'selected':''}>${x.nombre}</option>`).join('')}</select>
     </div>
-    <p class="pista">Desliza una línea a la derecha para marcarla como hecha, o tócala para ver el detalle.</p>
-    <div class="lista">${filas.length ? filas.map(({m,r,e})=>`
+    <p class="pista">Desliza una línea a la derecha para marcarla como hecha, o tócala para ver el detalle. Lo del taller va junto en su tarjeta.</p>
+    ${tarjetas}
+    <div class="lista">${filas.length ? filas.map(({m,e})=>`
       <div class="fwrap"><div class="fondo" aria-hidden="true">Hecho</div>
-        <div class="fila" data-id="${m.id}" tabindex="0" role="button" aria-label="${m.nombre}, ${nombreMaq(m.maq)}, ${textoRestante(r)}">
-          <span class="dot ${e||'n'}"></span>
-          <span class="fx"><span class="n">${m.nombre}</span><span class="s">${nombreMaq(m.maq)}, cada ${m.intervalo} h</span></span>
-          <span class="fq"><span class="rel" title="${m.reloj==='motor'?'Horas de motor':'Horas de trabajo'}">${m.reloj==='motor'?I.motor:I.reloj}</span>${textoRestante(r)}</span>
-        </div></div>`).join('') : '<div class="vacio" style="padding:16px">No hay mantenimientos con este filtro.</div>'}</div>`;
+        <div class="fila" data-id="${m.id}" tabindex="0" role="button" aria-label="${esc(m.nombre)}, ${esc(nombreMaq(m.maq))}, ${textoMant(m)}">
+          <span class="dot ${e||'n'}"></span>${marcaM(m)?'<span class="mk" title="Según el manual ya tocaría">M</span>':''}
+          <span class="fx"><span class="n">${m.nombre}</span><span class="s">${nombreMaq(m.maq)}, ${cadaTexto(m)}${m.manualH?`<br>Trabajo: ${textoMant(m)}. Manual: ${textoManual(m)}`:''}</span></span>
+          <span class="fq">${m.intervalo?`<span class="rel" title="${m.reloj==='motor'?'Horas de motor':'Horas de trabajo'}">${m.reloj==='motor'?I.motor:I.reloj}</span>`:`<span class="rel" title="Por tiempo">${I.cal}</span>`}${textoMant(m)}</span>
+        </div></div>`).join('') : `<div class="vacio" style="padding:16px">${tarjetas?'Nada más con este filtro.':'No hay mantenimientos con este filtro.'}</div>`}</div>`;
   $('#fe').querySelectorAll('button').forEach(b=>b.onclick=()=>{ filtroEstado=b.dataset.v; pintarMant(); });
   $('#fm').onchange=e=>{ filtroMaq=e.target.value; pintarMant(); };
   document.querySelectorAll('.fila').forEach(enlazarDeslizar);
+  document.querySelectorAll('[data-taller]').forEach(b=>b.onclick=()=>hojaTaller(b.dataset.taller));
 }
 
 function enlazarDeslizar(el){
@@ -1124,15 +1280,20 @@ function enlazarDeslizar(el){
 }
 
 function hojaDetalle(id){
-  const m = S.mants.find(x=>x.id===id), r = horasRestantes(m), e = estadoMant(m);
-  const ultimo = m.reloj==='motor' ? `A las ${fmtH(m.ultima)} h del horómetro` : `Hace ${fmtH(m.intervalo - r)} h de trabajo`;
-  abrirHoja(`<h3>${m.nombre}</h3>
+  const m = S.mants.find(x=>x.id===id), e = estadoMant(m), t = tractor(m.maq);
+  let ultimo = '';
+  if(m.intervalo) ultimo = m.reloj==='motor' ? `A las ${fmtH(m.ultima)} h del horómetro, ` : `Hace ${fmtH(m.intervalo - horasRestantes(m))} h de trabajo, `;
+  ultimo += fechaCorta(m.fecha);
+  abrirHoja(`<h3>${esc(m.nombre)}</h3>
     <dl class="det">
       <dt>Máquina</dt><dd>${nombreMaq(m.maq)}</dd>
-      <dt>Cuenta por</dt><dd>${m.reloj==='motor'?'Horas de motor (horómetro)':'Horas de trabajo (app)'}</dd>
-      <dt>Cada</dt><dd>${m.intervalo} h</dd>
-      <dt>Último</dt><dd>${ultimo}</dd>
-      <dt>Estado</dt><dd>${e==='r'?'Pasado':e==='y'?'Inminente':'Al día'}, ${textoRestante(r)}</dd>
+      <dt>Lo hace</dt><dd>${m.quien==='taller'?'El taller':'Tú'}</dd>
+      ${m.intervalo?`<dt>Cuenta por</dt><dd>${m.reloj==='motor'?'Horas de motor (horómetro)':'Horas de trabajo (app)'}</dd>`:''}
+      <dt>Toca</dt><dd>${cadaTexto(m).replace(/^c/,'C')}</dd>
+      ${m.nota?`<dt>Manual</dt><dd>${esc(m.nota)}</dd>`:''}
+      ${m.manualH?`<dt>Según el manual</dt><dd>${marcaM(m)?'<span class="mk">M</span> ':''}Cada ${fmtH(m.manualH)} h de horómetro: ${textoManual(m)}</dd>`:''}
+      <dt>Última vez</dt><dd>${ultimo}</dd>
+      <dt>Estado</dt><dd>${e==='r'?'Pasado':e==='y'?'Inminente':'Al día'}, ${textoMant(m)}</dd>
     </dl>
     <div class="acciones"><button id="no">Cerrar</button><button class="ok" id="si">Marcar como hecho</button></div>
     <div class="acciones"><button id="ed">Editar o borrar</button></div>`,()=>{
@@ -1142,45 +1303,295 @@ function hojaDetalle(id){
   });
 }
 
-function hojaHecho(id){
-  const m = S.mants.find(x=>x.id===id);
-  const r = horasRestantes(m);
+/* pone a cero un mantenimiento y lo apunta en el historial */
+function completar(m, o){
+  const t = tractor(m.maq);
+  const h = {fecha:Date.now(), hecho:o.fecha, mant:m.id, quien:o.quien, reloj:m.reloj};
+  if(o.revision) h.revision = true;
   if(m.reloj==='motor'){
-    const t = tractor(m.maq);
-    abrirHoja(`<h3>${m.nombre} hecho</h3><p>${t.nombre}. Indica el horómetro cuando lo hiciste. Si fue ahora, deja la última lectura.</p>
-      <label class="f" for="h">Horas del horómetro</label>${campoNumero('h', t.horometro)}
-      <div class="err" id="err"></div>
-      <div class="acciones"><button id="no">Cancelar</button><button class="ok" id="si">Guardar</button></div>`,()=>{
-        enlazarCamaras();
-        $('#no').onclick=()=>cerrarHoja();
-        $('#h').oninput=()=>{$('#err').textContent='';};
-        $('#si').onclick=()=>{
-          const v = parseFloat($('#h').value);
-          if(isNaN(v)){ $('#err').textContent='Escribe las horas del horómetro.'; return; }
-          if(v > t.horometro){ $('#err').textContent=`Es más que la última lectura (${fmtH(t.horometro)} h). Actualiza antes el horómetro desde Inicio.`; return; }
-          if(v < m.ultima){ $('#err').textContent=`Es menos que la vez anterior (${fmtH(m.ultima)} h).`; return; }
-          S.hechos.push({fecha:Date.now(), mant:m.id, reloj:'motor', horas:v, tocaba:m.ultima+m.intervalo});
-          m.ultima = v; guardar(); cerrarHoja(); pintar(); toast(`${m.nombre}: marcado como hecho`);
-        };
-    });
+    if(m.intervalo){ h.horas = o.horo; h.tocaba = m.ultima + m.intervalo; }
+    if(o.horo!=null) m.ultima = o.horo;
   } else {
-    const acumAhora = m.intervalo - r;
-    abrirHoja(`<h3>${m.nombre} hecho</h3><p>${nombreMaq(m.maq)}. Si lo acabas de hacer, deja 0. Si fue antes, indica cuántas horas de trabajo han pasado desde entonces.</p>
-      <label class="f" for="h">Horas de trabajo desde que lo hiciste</label>${campoNumero('h', 0)}
-      <div class="err" id="err"></div>
-      <div class="acciones"><button id="no">Cancelar</button><button class="ok" id="si">Guardar</button></div>`,()=>{
-        enlazarCamaras();
-        $('#no').onclick=()=>cerrarHoja();
-        $('#h').oninput=()=>{$('#err').textContent='';};
-        $('#si').onclick=()=>{
-          const v = parseFloat($('#h').value);
-          if(isNaN(v) || v<0){ $('#err').textContent='Escribe 0 o más horas.'; return; }
-          if(v > acumAhora){ $('#err').textContent=`Desde la vez anterior solo hay ${fmtH(acumAhora)} h de trabajo registradas.`; return; }
-          S.hechos.push({fecha:Date.now(), mant:m.id, reloj:'trabajo', horasAlHacerlo:acumAhora - v, intervalo:m.intervalo});
-          m.acum = v; m.desde = Date.now(); guardar(); cerrarHoja(); pintar(); toast(`${m.nombre}: marcado como hecho`);
-        };
-    });
+    if(m.intervalo){ h.horasAlHacerlo = (m.intervalo - horasRestantes(m)) - (o.trabajoDesde||0); h.intervalo = m.intervalo; }
+    m.acum = o.trabajoDesde||0; m.desde = Date.now();
+    if(t) m.ultimaHoro = Math.max(0, (o.horo!=null ? o.horo : t.horometro) - m.acum);
   }
+  m.fecha = o.fecha; m.mAviso = false;
+  S.hechos.push(h);
+}
+
+function hojaHecho(id, alAcabar){
+  const m = S.mants.find(x=>x.id===id), t = tractor(m.maq);
+  const conHoro = !!t && m.reloj==='motor' && !!m.intervalo;
+  const conTrab = m.reloj==='trabajo' && !!m.intervalo;
+  const acumAhora = conTrab ? m.intervalo - horasRestantes(m) : 0;
+  abrirHoja(`<h3>${esc(m.nombre)} hecho</h3><p>${nombreMaq(m.maq)}.${conHoro?' Indica el horómetro cuando lo hiciste. Si fue ahora, deja la última lectura.':''}${conTrab?' Si lo acabas de hacer, deja 0. Si fue antes, indica cuántas horas de trabajo han pasado desde entonces.':''}</p>
+    ${conHoro?`<label class="f" for="h">Horas del horómetro</label>${campoNumero('h', t.horometro)}`:''}
+    ${conTrab?`<label class="f" for="h">Horas de trabajo desde que lo hiciste</label>${campoNumero('h', 0)}`:''}
+    <label class="f" for="fd">Fecha</label><input id="fd" type="date" value="${hoyISO()}" max="${hoyISO()}">
+    <label class="f">Lo hizo</label><div class="seg" id="qq"><button data-v="yo" class="${m.quien!=='taller'?'sel':''}">Yo</button><button data-v="taller" class="${m.quien==='taller'?'sel':''}">Taller</button></div>
+    <div class="err" id="err"></div>
+    <div class="acciones"><button id="no">Cancelar</button><button class="ok" id="si">Guardar</button></div>`,()=>{
+      enlazarCamaras(); enlazarSeg('#qq');
+      $('#no').onclick=()=>cerrarHoja();
+      if($('#h')) $('#h').oninput=()=>{$('#err').textContent='';};
+      $('#si').onclick=()=>{
+        const err = x=>{ $('#err').textContent=x; };
+        const f = fechaDe($('#fd').value);
+        if(f > Date.now()+60000) return err('La fecha no puede ser futura.');
+        let v = null;
+        if(conHoro){
+          v = parseFloat($('#h').value);
+          if(isNaN(v)) return err('Escribe las horas del horómetro.');
+          if(v > t.horometro) return err(`Es más que la última lectura (${fmtH(t.horometro)} h). Actualiza antes el horómetro desde Inicio.`);
+          if(v < m.ultima) return err(`Es menos que la vez anterior (${fmtH(m.ultima)} h).`);
+        }
+        if(conTrab){
+          v = parseFloat($('#h').value);
+          if(isNaN(v) || v<0) return err('Escribe 0 o más horas.');
+          if(v > acumAhora) return err(`Desde la vez anterior solo hay ${fmtH(acumAhora)} h de trabajo registradas.`);
+        }
+        completar(m, {fecha:f, quien:valSeg('#qq'), horo: conHoro ? v : (t ? t.horometro : null), trabajoDesde: conTrab ? v : 0});
+        guardar(); cerrarHoja(); pintar(); toast(`${m.nombre}: marcado como hecho`);
+        if(alAcabar) setTimeout(alAcabar, 120);
+      };
+  });
+}
+
+/* ---------- próxima visita al taller ---------- */
+function tallerDe(maqId){
+  return S.mants.filter(m=>m.maq===maqId && m.quien==='taller').map(info)
+    .filter(x=>x.r < S.ventanaTaller || x.d < S.diasAmarillo).sort(porUrgencia);
+}
+const peorEstado = l => l.some(x=>x.e==='r') ? 'r' : l.some(x=>x.e==='y') ? 'y' : '';
+function tarjetaTaller(maqId){
+  const l = tallerDe(maqId); if(!l.length) return '';
+  const e = peorEstado(l);
+  return `<button class="taller" data-taller="${maqId}"><span class="dot ${e||'n'}" aria-label="${e==='r'?'Algo pasado':e==='y'?'Algo inminente':''}"></span><span><span class="n">Próxima visita al taller</span><br><span class="s">${nombreMaq(maqId)}, ${l.length} ${l.length===1?'tarea':'tareas'}. ${e?'Llama para pedir cita.':'Vencen en las próximas '+fmtH(S.ventanaTaller)+' h.'}</span></span><span class="q">Ver</span></button>`;
+}
+function textoTaller(maqId, l){
+  const t = tractor(maqId);
+  return `Revisión ${nombreMaq(maqId)}${t?` (horómetro ${fmtH(t.horometro)} h)`:''}:\n` + l.map(x=>`- ${x.m.nombre}`).join('\n');
+}
+function hojaTaller(maqId, quitados){
+  quitados = quitados || new Set();
+  const l = tallerDe(maqId), t = tractor(maqId);
+  const marcados = () => l.filter(x=>!quitados.has(x.m.id));
+  abrirHoja(`<h3>Próxima visita al taller</h3><p>${nombreMaq(maqId)}. Lo que hace el taller y vence pronto. Desmarca lo que no te vayan a hacer.</p>
+    <div class="ventana">Lo que vence en las próximas<button id="vm" aria-label="Menos horas">−</button><b>${fmtH(S.ventanaTaller)} h</b><button id="vp" aria-label="Más horas">+</button></div>
+    <div>${l.length ? l.map(x=>`<button class="chk ${quitados.has(x.m.id)?'':'on'}" data-id="${x.m.id}" aria-pressed="${!quitados.has(x.m.id)}"><span class="box">${OKSVG}</span><span>${esc(x.m.nombre)}<span class="s">${cadaTexto(x.m)}</span></span><span class="der"><span class="dot ${x.e||'n'}" style="display:inline-block;vertical-align:-1px;margin-right:6px"></span>${textoMant(x.m)}</span></button>`).join('') : '<p>No vence nada del taller en este margen.</p>'}</div>
+    <div class="err" id="err"></div>
+    ${l.length?`<div class="acciones"><button id="cp">Copiar lista</button><button id="wa">Enviar por WhatsApp</button></div>`:''}
+    <div class="acciones"><button id="no">Cerrar</button>${l.length?'<button class="ok" id="si">Revisión hecha</button>':''}</div>`,()=>{
+      $('#no').onclick=()=>cerrarHoja();
+      $('#vm').onclick=()=>{ S.ventanaTaller=Math.max(50, S.ventanaTaller-50); guardar(); hojaTaller(maqId, quitados); };
+      $('#vp').onclick=()=>{ S.ventanaTaller+=50; guardar(); hojaTaller(maqId, quitados); };
+      $('#hoja').querySelectorAll('.chk').forEach(b=>b.onclick=()=>{ const id=b.dataset.id; quitados.has(id)?quitados.delete(id):quitados.add(id); hojaTaller(maqId, quitados); });
+      if(!l.length) return;
+      const texto = () => textoTaller(maqId, marcados());
+      $('#cp').onclick=async()=>{ if(!marcados().length) return $('#err').textContent='Marca al menos una tarea.'; try{ await navigator.clipboard.writeText(texto()); toast('Lista copiada'); }catch(e){ $('#err').textContent='No se ha podido copiar. Mantén pulsado para seleccionar el texto.'; } };
+      $('#wa').onclick=()=>{ if(!marcados().length) return $('#err').textContent='Marca al menos una tarea.'; window.open('https://wa.me/?text='+encodeURIComponent(texto()), '_blank'); };
+      $('#si').onclick=()=>{ if(!marcados().length) return $('#err').textContent='Marca al menos una tarea.'; hojaRevision(maqId, marcados().map(x=>x.m.id), quitados); };
+  });
+}
+function hojaRevision(maqId, ids, quitados){
+  const t = tractor(maqId);
+  abrirHoja(`<h3>Revisión hecha</h3><p>Se ponen a cero ${ids.length} ${ids.length===1?'tarea':'tareas'} del ${nombreMaq(maqId)}.${t?' Indica el horómetro del día de la revisión.':''}</p>
+    ${t?`<label class="f" for="h">Horas del horómetro</label>${campoNumero('h', t.horometro)}`:''}
+    <label class="f" for="fd">Fecha</label><input id="fd" type="date" value="${hoyISO()}" max="${hoyISO()}">
+    <div class="err" id="err"></div>
+    <div class="acciones"><button id="no">Atrás</button><button class="ok" id="si">Guardar revisión</button></div>`,()=>{
+      enlazarCamaras();
+      $('#no').onclick=()=>hojaTaller(maqId, quitados);
+      $('#si').onclick=()=>{
+        const err = x=>{ $('#err').textContent=x; };
+        const f = fechaDe($('#fd').value);
+        if(f > Date.now()+60000) return err('La fecha no puede ser futura.');
+        let v = null;
+        if(t){
+          v = parseFloat($('#h').value);
+          if(isNaN(v)) return err('Escribe las horas del horómetro.');
+          const menor = ids.map(id=>S.mants.find(m=>m.id===id)).find(m=>m.reloj==='motor' && m.intervalo && v < m.ultima);
+          if(menor) return err(`Es menos que la vez anterior de ${menor.nombre} (${fmtH(menor.ultima)} h).`);
+          if(v > t.horometro){ S.lecturas.push({fecha:Date.now(), tractor:t.id, horas:v, origen:'taller'}); t.horometro = v; }
+        }
+        ids.forEach(id=>{ const m=S.mants.find(x=>x.id===id); if(m) completar(m, {fecha:f, quien:'taller', horo:v, trabajoDesde:0, revision:true}); });
+        guardar(); cerrarHoja(); pintar(); toast('Revisión guardada');
+      };
+  });
+}
+
+/* ---------- aviso M al actualizar el horómetro ---------- */
+function hojaAvisoM(ids){
+  const m = S.mants.find(x=>x.id===ids[0]);
+  if(!m){ cerrarHoja(); return; }
+  const t = tractor(m.maq), resto = ids.slice(1);
+  const siguiente = () => resto.length ? hojaAvisoM(resto) : (cerrarHoja(), pintar());
+  abrirHoja(`<h3><span class="mk">M</span> ${esc(m.nombre)}</h3>
+    <p>Según el manual toca cada ${fmtH(m.manualH)} h de horómetro, y desde la última vez han pasado ${fmtH(t.horometro - m.ultimaHoro)} h. Por horas de trabajo, ${textoMant(m)}.</p>
+    <div class="acciones"><button id="no">Seguir por horas de trabajo</button><button class="ok" id="si">Hacerlo ya</button></div>`,()=>{
+      $('#no').onclick=()=>{ m.mAviso = true; guardar(); siguiente(); };
+      $('#si').onclick=()=>hojaHecho(m.id, resto.length ? ()=>hojaAvisoM(resto) : null);
+  });
+}
+
+/* ---------- rutina diaria ---------- */
+const OKSVG = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"/></svg>';
+function rutinaHoy(tid){
+  const r = S.rutinaDia[tid];
+  if(r && r.dia===hoyISO()) return r;
+  return S.rutinaDia[tid] = {dia:hoyISO(), ok:[], fallos:[], saltada:false};
+}
+function rutinaPendiente(t){
+  if(!t || !(t.rutina||[]).length) return false;
+  const r = rutinaHoy(t.id);
+  return !r.saltada && !t.rutina.every(n=>r.ok.includes(n) || r.fallos.includes(n));
+}
+function rutinaTodoBien(t){
+  const r = rutinaHoy(t.id);
+  t.rutina.forEach(n=>{ if(!r.fallos.includes(n) && !r.ok.includes(n)) r.ok.push(n); });
+}
+function hojaPreguntaRutina(modo){
+  const t = tractor(S.sel.tractor), r = rutinaHoy(t.id);
+  const falta = t.rutina.filter(n=>!r.ok.includes(n) && !r.fallos.includes(n));
+  abrirHoja(`<h3>¿Hiciste la rutina?</h3><p>Hoy falta por mirar en el ${t.nombre}: ${falta.map(esc).join(', ').toLowerCase()}.</p>
+    <div class="acciones"><button class="ok" id="tb">Todo bien</button></div>
+    <div class="acciones"><button id="vl">Ver lista</button><button id="sl">Saltar</button></div>`,()=>{
+      $('#tb').onclick=()=>{ rutinaTodoBien(t); guardar(); cerrarHoja(); pulsarModo(modo, true); };
+      $('#sl').onclick=()=>{ r.saltada = true; guardar(); cerrarHoja(); pulsarModo(modo, true); };
+      $('#vl').onclick=()=>{ cerrarHoja(); setTimeout(()=>irA('salir'), 80); };
+  });
+}
+function hojaRutina(tid, lista){
+  const t = tractor(tid);
+  lista = lista || [...(t.rutina||[])];
+  abrirHoja(`<h3>Rutina diaria</h3><p>${t.nombre}. Lo que miras cada día antes de salir.</p>
+    <div>${lista.length ? lista.map((n,k)=>`<div class="mitem"><span>${esc(n)}</span><button data-k="${k}" aria-label="Quitar ${esc(n)}">×</button></div>`).join('') : '<p>Sin comprobaciones todavía.</p>'}</div>
+    <div class="caja"><label class="f" for="rn">Añadir comprobación</label><input id="rn" placeholder="Presión de neumáticos"><div class="err" id="err"></div><div class="acciones"><button id="add">Añadir a la lista</button></div></div>
+    <div class="acciones"><button id="no">Cancelar</button><button class="ok" id="si">Guardar rutina</button></div>`,()=>{
+      $('#hoja').querySelectorAll('.mitem button').forEach(b=>b.onclick=()=>{ lista.splice(+b.dataset.k,1); hojaRutina(tid, lista); });
+      $('#add').onclick=()=>{ const v=$('#rn').value.trim(); if(!v) return $('#err').textContent='Escribe qué hay que mirar.'; if(lista.includes(v)) return $('#err').textContent='Ya está en la lista.'; lista.push(v); hojaRutina(tid, lista); };
+      $('#no').onclick=()=>cerrarHoja();
+      $('#si').onclick=()=>{ t.rutina = lista; guardar(); cerrarHoja(); pintar(); toast('Rutina guardada'); };
+  });
+}
+function hojaFalla(tid, n){
+  const t = tractor(tid);
+  abrirHoja(`<h3>${esc(n)}: algo falla</h3><p>Se apunta como avería del ${t.nombre} con la fecha de hoy.</p>
+    <label class="f" for="fn">Qué pasa (opcional)</label><input id="fn" placeholder="Baja de nivel más de lo normal">
+    <div class="acciones"><button id="no">Cancelar</button><button class="peligro" id="si">Apuntar avería</button></div>`,()=>{
+      $('#no').onclick=()=>cerrarHoja();
+      $('#si').onclick=()=>{
+        const r = rutinaHoy(tid);
+        S.averias.push({id:nuevoId('v'), fecha:Date.now(), maq:tid, titulo:n, nota:$('#fn').value.trim(), origen:'rutina'});
+        r.ok = r.ok.filter(x=>x!==n); if(!r.fallos.includes(n)) r.fallos.push(n);
+        guardar(); cerrarHoja(); pintar(); toast('Avería apuntada');
+      };
+  });
+}
+
+/* ---------- pantalla Antes de salir ---------- */
+function pintarSalir(){
+  const t = tractor(S.sel.tractor), a = apero(S.sel.apero);
+  if(!t){ seccion='inicio'; return pintar(); }
+  const r = rutinaHoy(t.id), items = t.rutina||[];
+  const proximos = S.mants.filter(m=>(m.maq===t.id || (a && m.maq===a.id)) && m.quien!=='taller').map(info)
+    .filter(x=>x.r < S.ventanaSalir || x.d < 7 || marcaM(x.m)).sort(porUrgencia);
+  const tarjetas = [t.id, a && a.id].filter(Boolean).filter(id=>tallerDe(id).some(x=>x.r < S.ventanaSalir || x.e==='r')).map(tarjetaTaller).join('');
+  const fila = n => {
+    const ok = r.ok.includes(n), fa = r.fallos.includes(n);
+    return `<div class="rut"><button class="chk ${ok?'on':''} ${fa?'fallo':''}" data-n="${esc(n)}" aria-pressed="${ok}"><span class="box">${fa?'!':OKSVG}</span><span>${esc(n)}${fa?'<span class="s">Avería apuntada</span>':''}</span></button>${fa?'':`<button class="falla" data-f="${esc(n)}">Falla</button>`}</div>`;
+  };
+  $('#vista').innerHTML = `<div class="mes"><button class="flecha" id="vb" aria-label="Volver a Inicio">${FL.izq}</button><h2>Antes de salir</h2><span style="width:44px"></span></div>
+    <h2 class="secc">Rutina de hoy del ${t.nombre}</h2>
+    <section class="panel">${items.length ? items.map(fila).join('') + `<div class="acciones"><button id="ed">Editar rutina</button><button class="ok" id="tb">Todo bien</button></div>` : `<p class="vacio">No hay rutina diaria para este tractor.</p><div class="acciones"><button id="ed">Crear rutina</button></div>`}</section>
+    <h2 class="secc">Lo que vence pronto</h2>
+    <div class="ventana">En las próximas<button id="vm" aria-label="Menos horas">−</button><b>${fmtH(S.ventanaSalir)} h</b><button id="vp" aria-label="Más horas">+</button></div>
+    ${tarjetas}
+    <div class="lista">${proximos.length ? proximos.map(({m,e})=>`<button class="mov" data-m="${m.id}" style="align-items:center"><span class="dot ${e||'n'}"></span>${marcaM(m)?'<span class="mk" title="Según el manual ya tocaría">M</span>':''}<span class="fx"><span class="n">${m.nombre}</span><span class="s" style="font-size:13px;color:var(--text2)">${nombreMaq(m.maq)}, toca para marcarlo hecho</span></span><span class="der">${textoMant(m)}</span></button>`).join('') : `<div class="vacio" style="padding:14px">Nada vence en las próximas ${fmtH(S.ventanaSalir)} h con este tractor y este apero.</div>`}</div>`;
+  $('#vb').onclick=()=>history.back();
+  $('#ed').onclick=()=>hojaRutina(t.id);
+  if($('#tb')) $('#tb').onclick=()=>{ rutinaTodoBien(t); guardar(); pintar(); toast('Rutina hecha'); };
+  document.querySelectorAll('.rut .chk').forEach(b=>b.onclick=()=>{
+    const n = b.dataset.n;
+    if(r.ok.includes(n)) r.ok = r.ok.filter(x=>x!==n);
+    else { r.ok.push(n); r.fallos = r.fallos.filter(x=>x!==n); }
+    guardar(); pintar();
+    if(!rutinaPendiente(t)) toast('Rutina hecha');
+  });
+  document.querySelectorAll('[data-f]').forEach(b=>b.onclick=()=>hojaFalla(t.id, b.dataset.f));
+  $('#vm').onclick=()=>{ S.ventanaSalir=Math.max(5, S.ventanaSalir-5); guardar(); pintar(); };
+  $('#vp').onclick=()=>{ S.ventanaSalir+=5; guardar(); pintar(); };
+  document.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>hojaHecho(b.dataset.m));
+  document.querySelectorAll('[data-taller]').forEach(b=>b.onclick=()=>hojaTaller(b.dataset.taller));
+}
+
+/* ---------- averías (de momento, solo las apuntadas desde la rutina) ---------- */
+function pintarAverias(){
+  const l = [...S.averias].sort((a,b)=>b.fecha-a.fecha);
+  $('#vista').innerHTML = `<h2 class="secc">Averías apuntadas</h2>
+    <div class="lista">${l.length ? l.map(x=>`<div class="mov"><span class="fx"><span class="n">${esc(x.titulo)}</span><span class="s" style="font-size:13px;color:var(--text2)">${esc(nombreMaq(x.maq))}, ${fecha(x.fecha)}${x.nota?'. '+esc(x.nota):''}</span></span></div>`).join('') : '<div class="vacio" style="padding:14px">No hay averías apuntadas. Se apuntan con el botón Falla de la rutina, en Antes de salir.</div>'}</div>
+    <p class="pista">Apuntar averías sueltas y enlazarlas con un mantenimiento llegará en una versión siguiente.</p>`;
+}
+
+/* ---------- plantilla del Case IH Puma 240 CVX Stage IV ----------
+   Intervalos del cuadro de mantenimiento del manual del operador (1.ª ed. español, oct. 2018, apartado 7).
+   Donde Alejandro decidió algo distinto al manual, la nota lo dice. */
+const PLANTILLA = (()=>{
+  const M=(nombre, intervalo, meses, quien, reloj, nota, extra={}) => ({nombre, intervalo, meses, quien, reloj, nota:'Case IH: '+nota, cuenta: reloj==='trabajo' ? 'siempre' : null, ...extra});
+  return {
+    nombre:'Case IH Puma 240 CVX Stage IV', corto:'Puma 240',
+    rutina:['Nivel de refrigerante','Nivel de aceite de motor','Limpiar cristales'],
+    mants:[
+      M('Limpiar filtros de aire de cabina', 50, null, 'yo', 'motor', 'cada 50 h (pág. 7-23)'),
+      M('Limpiar SCR', 50, null, 'yo', 'motor', 'cada 50 h (pág. 7-25)'),
+      M('Limpiar radiadores', 50, null, 'yo', 'motor', 'cada 50 h (pág. 7-26)'),
+      M('Engrasadores', 50, null, 'yo', 'trabajo', 'cada 50 h de horómetro (pág. 7-28). Pendiente separar por grupos', {manualH:50}),
+      M('Comprobar correas', 100, null, 'yo', 'motor', 'cada 100 h (pág. 7-36 y 7-37)'),
+      M('Nivel de líquido de batería', 300, null, 'yo', 'motor', 'cada 300 h (pág. 7-38)'),
+      M('Nivel de aceite de transmisión', 300, null, 'yo', 'motor', 'cada 300 h (pág. 7-40)'),
+      M('Ajuste del freno de mano', 300, null, 'yo', 'motor', 'cada 300 h (pág. 7-41)'),
+      M('Nivel de aceite del eje delantero', 300, null, 'taller', 'motor', 'cada 300 h (pág. 7-42)'),
+      M('Aceite y filtro de motor', 350, null, 'yo', 'motor', 'cada 600 h (pág. 7-43). Lo cambias cada 350 h'),
+      M('Filtros de combustible', 600, null, 'yo', 'motor', 'cada 600 h, 1.ª fase y cartucho (pág. 7-45)'),
+      M('Limpiar prelimpiador de aire', 600, null, 'yo', 'motor', 'cada 600 h (pág. 7-47)'),
+      M('Filtros hidráulicos de alimentación y retorno', 600, null, 'taller', 'motor', 'cada 600 h (pág. 7-48)'),
+      M('Revisar admisión de aire', 600, null, 'yo', 'motor', 'cada 600 h (pág. 7-49)'),
+      M('Transmisión, limpieza', 600, null, 'taller', 'motor', 'cada 600 h (pág. 7-50)'),
+      M('Filtro en línea AdBlue', 600, null, 'taller', 'motor', 'cada 600 h (pág. 7-50)'),
+      M('Cambiar filtros de aire de cabina', 1200, 12, 'yo', 'motor', 'cada 1.200 h o 1 año (pág. 7-51)'),
+      M('Filtro de aspiración hidráulica', 1200, 12, 'taller', 'motor', 'cada 1.200 h o 1 año (pág. 7-52)'),
+      M('Aceite de diferencial y planetarios', 1200, 12, 'taller', 'motor', 'cada 1.200 h o 1 año (pág. 7-53)'),
+      M('Aceite de cubos delanteros', 1200, 12, 'taller', 'motor', 'cada 1.200 h o 1 año (pág. 7-54)'),
+      M('Engrase del cojinete del eje trasero', 1200, 12, 'taller', 'motor', 'cada 1.200 h o 1 año (pág. 7-55)'),
+      M('Filtro AdBlue 1.200 h', 1200, 24, 'taller', 'motor', 'cada 1.200 h o 2 años (pág. 7-56)'),
+      M('Cartucho interior del filtro de aire', 1200, 24, 'taller', 'motor', 'cada 1.200 h o 2 años (pág. 7-57)'),
+      M('Holgura de válvulas', 1200, 24, 'taller', 'motor', 'cada 1.200 h o 2 años (pág. 7-58)'),
+      M('Frenos neumáticos del remolque', 1200, 24, 'taller', 'motor', 'cada 1.200 h o 2 años (pág. 7-58)'),
+      M('Cambiar correas trapezoidales', 1200, 24, 'taller', 'motor', 'cada 1.200 h o 2 años (pág. 7-59)'),
+      M('Aceite de transmisión', 1200, 24, 'taller', 'motor', 'cada 1.200 h o 2 años (pág. 7-61)'),
+      M('Filtro del respiradero del motor', 1800, 24, 'taller', 'motor', 'cada 1.800 h o 2 años (pág. 7-63)'),
+      M('Filtro AdBlue 3.600 h', 3600, 24, 'taller', 'motor', 'cada 3.600 h o 2 años (pág. 7-63)'),
+      M('Refrigerante del motor', 3600, 48, 'taller', 'motor', 'cada 3.600 h o 4 años (pág. 7-64)'),
+      M('Deshumidificador del aire acondicionado', null, 24, 'taller', 'motor', 'cada 2 años (pág. 7-62)'),
+      M('Vaciar botella de la válvula remota', null, 1, 'yo', 'motor', 'cada 10 h (pág. 7-20). Lo haces cada mes')
+    ]
+  };
+})();
+function hojaCargarPlantilla(tid){
+  const t = tractor(tid);
+  const faltan = PLANTILLA.mants.filter(p=>!S.mants.some(m=>m.maq===tid && m.nombre===p.nombre));
+  const rutNueva = PLANTILLA.rutina.filter(n=>!(t.rutina||[]).includes(n));
+  abrirHoja(`<h3>Cargar plantilla</h3><p>${PLANTILLA.nombre}. Se añaden al ${t.nombre} ${faltan.length} mantenimientos que aún no tiene${rutNueva.length?' y la rutina diaria':''}.</p>
+    <p>Empiezan a contar desde hoy y desde el horómetro actual (${fmtH(t.horometro)} h). Después corrige la última vez de cada uno con Editar.</p>
+    <div class="acciones"><button id="no">Cancelar</button><button class="ok" id="si">Añadir ${faltan.length}</button></div>`,()=>{
+      $('#no').onclick=()=>cerrarHoja();
+      $('#si').onclick=()=>{
+        faltan.forEach(p=>crearMant(tid, {...p, ultimo:null, fecha:Date.now()}, t.horometro));
+        t.rutina = [...(t.rutina||[]), ...rutNueva];
+        guardar(); cerrarHoja(); pintar(); toast(`${faltan.length} mantenimientos añadidos`);
+      };
+  });
 }
 
 function pintar(){
@@ -1192,6 +1603,8 @@ function pintar(){
   else if(seccion==='gasoil') pintarComb();
   else if(seccion==='dias') pintarDias();
   else if(seccion==='maquinas') pintarMaquinas();
+  else if(seccion==='salir') pintarSalir();
+  else if(seccion==='averias') pintarAverias();
   else {
     const nom = SECCIONES.find(s=>s[0]===seccion)[1];
     $('#vista').innerHTML = `<div class="prox"><h2 style="font-weight:500;color:var(--text)">${nom}</h2><p>Esta sección la construiremos en los siguientes pasos.</p></div>`;
@@ -1224,7 +1637,7 @@ function comprobarAvisos(){
         cambio = true;
         const m = S.mants.find(x=>x.id===id);
         if(ahora[id]==='r') toast(`${m.nombre}: ya toca`);
-        else if(ahora[id]==='y') toast(`${m.nombre}: quedan menos de ${fmtH(umbralDe(m))} h`);
+        else if(ahora[id]==='y') toast(`${m.nombre}: ${textoMant(m)}`);
       }
     }
   }
@@ -1296,6 +1709,7 @@ function hojaAjustes(){
     <div class="acciones"><button id="rc">Recuperar datos desde Drive</button></div>
     <hr class="sep"><p class="peq">Avisos</p>
     <label class="f" for="ua">Amarillo cuando falten menos de (h)</label><p class="nota" style="margin:0 0 4px">O menos de una cuarta parte del intervalo, si es m\u00e1s corto.</p><input id="ua" type="number" inputmode="decimal" value="${S.umbralAmarillo}">
+    <label class="f" for="ux">Amarillo por tiempo cuando falten menos de (d\u00edas)</label><input id="ux" type="number" inputmode="numeric" value="${S.diasAmarillo}">
     <label class="f" for="ul">Aviso de sesi\u00f3n abierta a partir de (h)</label><input id="ul" type="number" inputmode="decimal" value="${S.umbralLarga}">
     <label class="f" for="ud">Alerta de desajuste del dep\u00f3sito a partir de (%)</label><input id="ud" type="number" inputmode="decimal" value="${S.umbralDesajuste}">
     <div class="err" id="err2"></div>
@@ -1328,9 +1742,9 @@ function hojaAjustes(){
         });
       };
       $('#gu').onclick=()=>{
-        const a=parseFloat($('#ua').value), l=parseFloat($('#ul').value), d=parseFloat($('#ud').value);
-        if(!(a>0)||!(l>0)||!(d>0)){ $('#err2').textContent='Los tres valores deben ser mayores que 0.'; return; }
-        S.umbralAmarillo=a; S.umbralLarga=l; S.umbralDesajuste=d; guardar(); cerrarHoja(); pintar(); toast('Avisos guardados');
+        const a=parseFloat($('#ua').value), l=parseFloat($('#ul').value), d=parseFloat($('#ud').value), x=parseFloat($('#ux').value);
+        if(!(a>0)||!(l>0)||!(d>0)||!(x>0)){ $('#err2').textContent='Todos los valores deben ser mayores que 0.'; return; }
+        S.diasAmarillo=x; S.umbralAmarillo=a; S.umbralLarga=l; S.umbralDesajuste=d; guardar(); cerrarHoja(); pintar(); toast('Avisos guardados');
       };
   });
 }
