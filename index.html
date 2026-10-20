@@ -1,0 +1,1356 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mantenimiento</title>
+<meta name="theme-color" content="#3B6D11">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto+Flex:opsz,wght@8..144,400;8..144,500;8..144,700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F7F6F2; --card:#FFFFFF; --line:#DEDCD3; --text:#1F2A1F; --text2:#5F6B5C;
+  --campo:#3B6D11; --campo-bg:#EAF3DE; --campo-on:#FFFFFF;
+  --tierra:#A0640F; --tierra-bg:#FAEEDA; --tierra-on:#FFFFFF;
+  --stop:#B3261E; --stop-off:#D9A6A2;
+  --rojo:#E24B4A; --amarillo:#EF9F27;
+  --scrim:rgba(20,25,20,.45);
+  color-scheme:light;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#151A15; --card:#1F261F; --line:#34402F; --text:#E8EDE4; --text2:#A9B5A3;
+    --campo:#6FA83A; --campo-bg:#27361C; --campo-on:#0E140B;
+    --tierra:#D69A45; --tierra-bg:#3A2C17; --tierra-on:#1A1206;
+    --stop:#E0453B; --stop-off:#5A2E2B;
+    --scrim:rgba(0,0,0,.6);
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#151A15; --card:#1F261F; --line:#34402F; --text:#E8EDE4; --text2:#A9B5A3;
+  --campo:#6FA83A; --campo-bg:#27361C; --campo-on:#0E140B;
+  --tierra:#D69A45; --tierra-bg:#3A2C17; --tierra-on:#1A1206;
+  --stop:#E0453B; --stop-off:#5A2E2B;
+  --scrim:rgba(0,0,0,.6);
+  color-scheme:dark;
+}
+*,*::before,*::after{box-sizing:border-box}
+html,body{height:100%;margin:0}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{background:var(--bg);color:var(--text);font-family:"Roboto Flex",Roboto,"Segoe UI",system-ui,sans-serif;font-size:16px;line-height:1.4;-webkit-tap-highlight-color:transparent}
+button{font:inherit;color:inherit}
+.app{max-width:480px;margin:0 auto;min-height:100%;display:flex;flex-direction:column}
+.top{display:flex;justify-content:space-between;align-items:center;padding:14px 18px 6px;font-size:14px;color:var(--text2)}
+.badge{font:inherit;font-size:12px;padding:4px 10px;border-radius:999px;border:0;cursor:pointer;background:var(--tierra-bg);color:var(--tierra)}
+.badge.ok{background:var(--campo-bg);color:var(--campo)}
+.bienv{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px 18px;margin-top:8px}
+.bienv h2{margin:0 0 6px;font-size:20px;font-weight:500}
+.bienv p{color:var(--text2);margin:0 0 14px}
+main{flex:1;padding:6px 14px 120px}
+.maquinas{background:var(--card);border:1px solid var(--line);border-radius:16px;overflow:hidden}
+.maq{display:flex;align-items:center;gap:12px;padding:12px 14px;width:100%;background:none;border:0;text-align:left;cursor:pointer}
+.maq + .maq{border-top:1px solid var(--line)}
+.maq:focus-visible,.btn:focus-visible,.nav button:focus-visible,.chip:focus-visible{outline:3px solid var(--campo);outline-offset:2px}
+.ico{width:48px;height:48px;border-radius:12px;display:grid;place-items:center;flex:none}
+.ico svg{width:28px;height:28px}
+.ico.t{background:var(--campo-bg);color:var(--campo)}
+.ico.a{background:var(--tierra-bg);color:var(--tierra)}
+.maq .n{font-size:17px;font-weight:500}
+.maq .s{font-size:13px;color:var(--text2)}
+.maq .sw{margin-left:auto;color:var(--text2);width:22px;height:22px}
+.aviso-largo{margin:12px 0 0;padding:10px 12px;border-radius:12px;background:var(--tierra-bg);color:var(--tierra);font-size:14px;display:none}
+.reloj{text-align:center;margin:22px 0 4px;font-size:44px;font-weight:500;font-variant-numeric:tabular-nums;letter-spacing:.02em}
+.reloj.parado{color:var(--text2)}
+.reloj-sub{text-align:center;font-size:13px;color:var(--text2);min-height:18px}
+.controles{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:12px;margin:16px 0 0}
+.btn{border-radius:14px;padding:14px 8px;border:2px solid;background:var(--card);cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;font-size:15px;font-weight:500;transition:background .15s,color .15s,opacity .15s}
+.btn svg{width:26px;height:26px}
+.btn.carretera{border-color:var(--tierra);color:var(--tierra)}
+.btn.campo{border-color:var(--campo);color:var(--campo)}
+.btn.carretera.on{background:var(--tierra);color:var(--tierra-on)}
+.btn.campo.on{background:var(--campo);color:var(--campo-on)}
+.btn.tenue{opacity:.45}
+.stop{width:86px;height:86px;border:0;cursor:pointer;background:var(--stop-off);color:#fff;font-weight:700;font-size:17px;letter-spacing:.04em;clip-path:polygon(29.3% 0,70.7% 0,100% 29.3%,100% 70.7%,70.7% 100%,29.3% 100%,0 70.7%,0 29.3%);display:grid;place-items:center;transition:background .15s,transform .1s}
+.stop.on{background:var(--stop)}
+.stop:active{transform:scale(.96)}
+.stop:focus-visible{outline:3px solid var(--stop);outline-offset:4px}
+.rapidos{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:20px 0 0}
+.chip{display:flex;align-items:center;justify-content:center;gap:8px;padding:12px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--campo);font-size:15px;cursor:pointer}
+.chip svg{width:20px;height:20px}
+.avisos{margin:16px 0 0;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:6px 14px}
+.avisos h2{font-size:14px;font-weight:500;color:var(--text2);margin:8px 0 4px}
+.av{display:flex;align-items:center;gap:10px;padding:9px 0;font-size:15px}
+.av + .av{border-top:1px solid var(--line)}
+.dot{width:12px;height:12px;border-radius:3px;flex:none}
+.dot.r{background:var(--rojo)} .dot.y{background:var(--amarillo)}
+.av .q{margin-left:auto;color:var(--text2);font-size:14px;white-space:nowrap}
+.vacio{color:var(--text2);font-size:15px;padding:8px 0 10px}
+.navwrap{position:fixed;left:0;right:0;bottom:0;background:var(--card);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px);z-index:5}
+.navin{max-width:480px;margin:0 auto;display:flex;align-items:stretch}
+.nav{flex:1;display:flex;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;mask-image:linear-gradient(to right,#000 85%,transparent)}
+.nav::-webkit-scrollbar{display:none}
+.nav button{flex:0 0 22%;scroll-snap-align:start;background:none;border:0;padding:8px 2px 10px;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:12px;color:var(--text2);cursor:pointer}
+.nav button svg{width:24px;height:24px}
+.nav button.act{color:var(--campo);font-weight:500}
+.fijos{display:flex;border-left:1px solid var(--line)}
+.fijos button{background:none;border:0;width:52px;display:grid;place-items:center;color:var(--text2);cursor:pointer}
+.fijos svg{width:24px;height:24px}
+.scrim{position:fixed;inset:0;background:var(--scrim);display:none;align-items:flex-end;justify-content:center;z-index:10}
+.scrim.on{display:flex}
+.hoja{background:var(--card);width:100%;max-width:480px;border-radius:20px 20px 0 0;padding:18px 18px calc(18px + env(safe-area-inset-bottom,0px));max-height:85%;overflow:auto}
+.hoja h3{margin:0 0 6px;font-size:19px;font-weight:500}
+.hoja p{margin:4px 0 12px;color:var(--text2);font-size:15px}
+.opc{display:flex;align-items:center;gap:12px;width:100%;padding:12px;border:1px solid var(--line);border-radius:12px;background:none;cursor:pointer;margin:0 0 8px;text-align:left}
+.opc.sel{border-color:var(--campo);background:var(--campo-bg)}
+.opc .s{font-size:13px;color:var(--text2)}
+label.f{display:block;font-size:14px;color:var(--text2);margin:10px 0 4px}
+.campo-num{display:flex;gap:8px}
+.campo-num input,.hoja input,.hoja select{flex:1;width:100%;font:inherit;font-size:17px;padding:11px 12px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--text)}
+.cam{width:48px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--text2);display:grid;place-items:center;cursor:pointer}
+.cam svg{width:22px;height:22px}
+.acciones{display:flex;gap:10px;margin-top:16px}
+.acciones button{flex:1;padding:13px;border-radius:12px;font-size:16px;font-weight:500;cursor:pointer;border:1px solid var(--line);background:none}
+.acciones .ok{background:var(--campo);border-color:var(--campo);color:var(--campo-on)}
+.acciones .peligro{background:var(--stop);border-color:var(--stop);color:#fff}
+.err{color:var(--stop);font-size:14px;margin-top:6px;min-height:18px}
+.nota{font-size:13px;color:var(--text2);margin-top:8px}
+.seg{display:flex;gap:6px;margin:4px 0}
+.seg button{flex:1;padding:10px 4px;border-radius:10px;border:1px solid var(--line);background:none;cursor:pointer;font-size:14px}
+.seg button.sel{background:var(--campo);border-color:var(--campo);color:var(--campo-on)}
+.toast{position:fixed;left:50%;bottom:96px;transform:translateX(-50%);background:var(--text);color:var(--bg);padding:10px 16px;border-radius:999px;font-size:14px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:20;max-width:90%}
+.toast.on{opacity:1}
+.prox{padding:60px 20px;text-align:center;color:var(--text2)}
+.filtros{display:flex;flex-direction:column;gap:8px;margin:4px 0 6px}
+.filtros select{font:inherit;font-size:15px;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--text)}
+.filtros .seg button{display:flex;align-items:center;justify-content:center;gap:6px}
+.filtros .dot{width:10px;height:10px}
+.pista{font-size:13px;color:var(--text2);margin:6px 2px 8px}
+.lista{background:var(--card);border:1px solid var(--line);border-radius:16px;overflow:hidden}
+.fwrap{position:relative;overflow:hidden}
+.fwrap+.fwrap{border-top:1px solid var(--line)}
+.fondo{position:absolute;inset:0;background:var(--campo);color:var(--campo-on);display:flex;align-items:center;padding-left:18px;font-weight:500}
+.fila{position:relative;background:var(--card);display:flex;align-items:center;gap:12px;padding:12px 14px;touch-action:pan-y;cursor:pointer;user-select:none}
+.fila:focus-visible{outline:3px solid var(--campo);outline-offset:-3px}
+.fx{display:flex;flex-direction:column;min-width:0}
+.fx .n{font-size:16px}
+.fx .s{font-size:13px;color:var(--text2)}
+.fq{margin-left:auto;display:flex;align-items:center;gap:6px;font-size:14px;color:var(--text2);white-space:nowrap}
+.rel svg{width:16px;height:16px;display:block}
+.dot.n{background:transparent;border:1px solid var(--line)}
+.det{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;font-size:15px;margin:8px 0 4px}
+.det dt{color:var(--text2)} .det dd{margin:0}
+.dep{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px 16px}
+.dep .tit{font-size:14px;color:var(--text2)}
+.dep .big{font-size:34px;font-weight:500;font-variant-numeric:tabular-nums;margin:2px 0}
+.dep .s{font-size:14px;color:var(--text2)}
+.dep .des{margin-top:10px;padding:8px 10px;border-radius:10px;font-size:14px;background:var(--bg)}
+.dep .des.alerta{background:var(--tierra-bg);color:var(--tierra)}
+.barra{height:8px;border-radius:999px;background:var(--bg);overflow:hidden;margin:8px 0 6px}
+.barra span{display:block;height:100%;background:var(--campo)}
+.acc3{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0 0}
+.acc3 .chip:last-child:nth-child(odd){grid-column:1/-1}
+.hist{margin-top:16px}
+.hist h2{font-size:14px;font-weight:500;color:var(--text2);margin:0 4px 8px}
+.mov{display:flex;align-items:flex-start;gap:12px;padding:12px 14px;width:100%;background:none;border:0;text-align:left;font:inherit;color:inherit}
+.mov + .mov{border-top:1px solid var(--line)}
+.mov .fx{flex:1}
+.mov .der{text-align:right;font-size:14px;white-space:nowrap}
+.mov .der .s{display:block;font-size:13px;color:var(--text2)}
+.tag{display:inline-block;font-size:12px;padding:2px 8px;border-radius:999px;background:var(--tierra-bg);color:var(--tierra);margin-top:4px}
+.tag.ok{background:var(--campo-bg);color:var(--campo)}
+button.mov{cursor:pointer}
+.chk{display:flex;align-items:center;gap:10px;margin:12px 0 0;font-size:15px}
+.chk input{width:22px;height:22px;flex:none;accent-color:var(--campo)}
+.mes{display:flex;align-items:center;justify-content:space-between;margin:2px 0 10px}
+.mes h2{font-size:18px;font-weight:500;margin:0}
+.flecha{width:44px;height:44px;border-radius:12px;border:1px solid var(--line);background:var(--card);display:grid;place-items:center;cursor:pointer;color:var(--text)}
+.flecha svg{width:22px;height:22px}
+.cal{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:10px;display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.cal .wd{text-align:center;font-size:12px;color:var(--text2);padding:4px 0}
+.cal button{aspect-ratio:1;border:0;border-radius:10px;background:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:15px}
+.cal button.hoy{outline:2px solid var(--campo);outline-offset:-2px}
+.cal button.con{background:var(--campo-bg);font-weight:500}
+.cal .pt{width:6px;height:6px;border-radius:50%;background:var(--campo)}
+.agenda{position:relative;background:var(--card);border:1px solid var(--line);border-radius:16px;margin-top:4px;overflow:hidden}
+.agenda .hl{position:absolute;left:0;right:0;border-top:1px solid var(--line);font-size:11px;color:var(--text2);padding-left:6px}
+.blk{position:absolute;left:52px;right:10px;border-radius:8px;padding:4px 8px;font-size:13px;overflow:hidden;border:0;text-align:left;cursor:pointer;line-height:1.25}
+.blk.campo{background:var(--campo);color:var(--campo-on)}
+.blk.carretera{background:var(--tierra);color:var(--tierra-on)}
+.blk.abierta{opacity:.7}
+.tramos{border:1px solid var(--line);border-radius:12px;overflow:hidden;margin:8px 0}
+.tramo{display:flex;align-items:center;gap:10px;padding:11px 12px;width:100%;border:0;background:none;text-align:left;cursor:pointer;font:inherit;color:inherit}
+.tramo+.tramo{border-top:1px solid var(--line)}
+.tramo .bar{width:6px;align-self:stretch;border-radius:3px}
+.tramo .bar.campo{background:var(--campo)} .tramo .bar.carretera{background:var(--tierra)}
+.tramo .der{margin-left:auto;font-size:14px;color:var(--text2);white-space:nowrap}
+.cambio{display:flex;justify-content:space-between;gap:10px;padding:8px 0;font-size:15px}
+.cambio+.cambio{border-top:1px solid var(--line)}
+.cambio .s{color:var(--text2);font-size:13px}
+.sep{border:0;border-top:1px solid var(--line);margin:16px 0 8px}
+.peq{font-size:14px;font-weight:500;margin:0 0 4px}
+.cnt{margin-left:auto;display:flex;align-items:center;gap:6px;font-size:14px;color:var(--text2)}
+.cnt .dot{width:10px;height:10px}
+.secc{font-size:14px;font-weight:500;color:var(--text2);margin:18px 4px 8px}
+.wz{font-size:13px;color:var(--text2);margin:0 0 2px}
+.mitem{display:flex;align-items:center;gap:8px;padding:8px 0;border-top:1px solid var(--line);font-size:15px}
+.mitem .s{display:block;font-size:13px;color:var(--text2)}
+.mitem button{margin-left:auto;border:0;background:none;color:var(--text2);cursor:pointer;width:40px;height:40px;font-size:22px;flex:none}
+.caja{border:1px solid var(--line);border-radius:12px;padding:4px 12px 12px;margin-top:12px}
+@media (prefers-reduced-motion: reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="top"><span id="fecha"></span><button class="badge" id="sync" type="button">Sin conectar</button></div>
+  <main id="vista"></main>
+</div>
+
+<div class="navwrap"><div class="navin">
+  <nav class="nav" id="nav" aria-label="Secciones"></nav>
+  <div class="fijos">
+    <button id="btnAtras" aria-label="Atrás"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></button>
+    <button id="btnAjustes" aria-label="Ajustes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
+  </div>
+</div></div>
+
+<div class="scrim" id="scrim"><div class="hoja" id="hoja" role="dialog" aria-modal="true"></div></div>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+const I = {
+  motor:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 10h2l2-2h5l2 2h2v2h2v-2h1v6h-1v-2h-2v3h-3l-2 2H9l-2-2H5z"/><path d="M9 5h4M11 5v3"/></svg>',
+  reloj:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></svg>',
+  tractor:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="7" cy="16" r="4"/><circle cx="18" cy="17.5" r="2.5"/><path d="M11 16h4.5M3.5 13V6h6l2 6h7v3"/><path d="M9.5 6v-2M17 12V8"/></svg>',
+  apero:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M6 6v8l-2 4M12 6v8l-2 4M18 6v8l-2 4"/></svg>',
+  swap:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4L3 8l4 4"/><path d="M3 8h13"/><path d="M17 20l4-4-4-4"/><path d="M21 16H8"/></svg>',
+  road:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20L8 4M20 20L16 4M12 6v2M12 11v2M12 16v2"/></svg>',
+  campo:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21V11"/><path d="M12 11c0-4 3-6 7-6 0 4-3 6-7 6z"/><path d="M12 14c0-3-2.5-5-6-5 0 3 2.5 5 6 5z"/><path d="M3 21h18"/></svg>',
+  cam:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>',
+  gas:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v16"/><path d="M3 21h12M4 10h10"/><path d="M14 8h2a2 2 0 0 1 2 2v6a1.5 1.5 0 0 0 3 0V8l-3-3"/></svg>',
+  home:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11l8-7 8 7v9h-5v-6H9v6H4z"/></svg>',
+  tool:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a4 4 0 0 0 5 5L21 13l-8 8-3-3 8-8z"/><path d="M14.7 6.3L9 12l-3-3 5.7-5.7a4 4 0 0 1 3 3z"/></svg>',
+  cal:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M4 10h16M9 3v4M15 3v4"/></svg>',
+  warn:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4l9 16H3z"/><path d="M12 10v4M12 17v.5"/></svg>',
+  chart:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>',
+  bell:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4z"/><path d="M10 20a2 2 0 0 0 4 0"/></svg>'
+};
+
+const SECCIONES = [
+  ['inicio','Inicio',I.home],['mant','Mantenim.',I.tool],['gasoil','Combustible',I.gas],['dias','Días',I.cal],
+  ['maquinas','Máquinas',I.tractor],['averias','Averías',I.warn],['stats','Estadísticas',I.chart],['notif','Avisos',I.bell]
+];
+
+const H = 3600000;
+const CLAVE = 'mant-app-v1';
+
+function estadoInicial(){
+  return {
+    tractores:[], aperos:[], mants:[],
+    sel:{tractor:null, apero:null},
+    sesion:null, sesiones:[], lecturas:[], repostajes:[], hechos:[], cambios:[],
+    deposito:{capacidad:2000, movs:[]},
+    umbralDesajuste:5, umbralAmarillo:20, umbralLarga:10
+  };
+}
+
+let S;
+try{ S = JSON.parse(localStorage.getItem(CLAVE)) || estadoInicial(); }catch(e){ S = estadoInicial(); }
+function guardar(){ try{ localStorage.setItem(CLAVE, JSON.stringify(S)); }catch(e){} if(typeof marcarPendiente==='function') marcarPendiente(); }
+if(!S.hechos) S.hechos = [];
+if(!S.deposito) S.deposito = {capacidad:2000, movs:[]};
+if(S.umbralDesajuste==null) S.umbralDesajuste = 5;
+S.tractores.forEach(t=>{ if(t.horometroAlta==null) t.horometroAlta = t.horometro; });
+
+const $ = s => document.querySelector(s);
+const tractor = id => S.tractores.find(t=>t.id===id);
+const apero = id => S.aperos.find(a=>a.id===id);
+const esCompat = (a,tid) => !!a && (a.compatTodos || (a.compat||[]).includes(tid));
+const fmtH = h => (Math.round(h*10)/10).toLocaleString('es-ES',{maximumFractionDigits:1});
+function dur(ms){ ms=Math.max(0,ms); const s=Math.floor(ms/1000); const h=Math.floor(s/3600), m=Math.floor(s%3600/60), x=s%60; return [h,m,x].map(n=>String(n).padStart(2,'0')).join(':'); }
+function toast(t){ const el=$('#toast'); el.textContent=t; el.classList.add('on'); clearTimeout(toast.k); toast.k=setTimeout(()=>el.classList.remove('on'),2200); }
+
+function cuentaEnTramo(m, tramo){
+  if(m.reloj!=='trabajo') return false;
+  const ap = apero(tramo.apero);
+  if(m.maq===tramo.tractor){
+    if(m.cuenta==='siempre') return true;
+    if(m.cuenta==='campo') return tramo.modo==='campo';
+    if(m.cuenta==='alza') return tramo.modo==='campo' && ap && ap.tipo==='suspendido';
+    return false;
+  }
+  if(m.maq===tramo.apero){
+    if(m.cuenta==='siempre') return ap.tipo==='arrastrado' || tramo.modo==='campo';
+    if(m.cuenta==='campo') return tramo.modo==='campo';
+  }
+  return false;
+}
+
+function horasRestantes(m){
+  if(m.reloj==='motor'){
+    const t = tractor(m.maq);
+    return m.intervalo - (t.horometro - m.ultima);
+  }
+  let acum = m.acum;
+  const tr = S.sesion && S.sesion.tramos[S.sesion.tramos.length-1];
+  if(tr && !tr.fin && cuentaEnTramo(m,tr)) acum += Math.max(0,(Date.now()-Math.max(tr.inicio, m.desde||0))/H);
+  return m.intervalo - acum;
+}
+
+const umbralDe = m => Math.min(S.umbralAmarillo, m.intervalo/4);
+function estadoMant(m){
+  const r = horasRestantes(m);
+  if(r < 0) return 'r';
+  if(r < umbralDe(m)) return 'y';
+  return '';
+}
+
+function cerrarTramo(fin){
+  const ses = S.sesion; if(!ses) return;
+  const tr = ses.tramos[ses.tramos.length-1];
+  if(!tr || tr.fin) return;
+  tr.fin = fin;
+  S.mants.forEach(m=>{ if(cuentaEnTramo(m,tr)) m.acum += Math.max(0,(tr.fin - Math.max(tr.inicio, m.desde||0))/H); });
+}
+
+function abrirTramo(modo, inicio){
+  S.sesion.tramos.push({modo, tractor:S.sel.tractor, apero:S.sel.apero, inicio, fin:null});
+}
+
+function pulsarModo(modo){
+  const ahora = Date.now();
+  if(!S.sesion){
+    S.sesion = {inicio:ahora, tractor:S.sel.tractor, tramos:[]};
+    abrirTramo(modo, ahora);
+    toast(modo==='campo' ? 'Sesión iniciada en campo' : 'Sesión iniciada en carretera');
+  } else {
+    const tr = S.sesion.tramos[S.sesion.tramos.length-1];
+    if(tr.modo===modo) return;
+    cerrarTramo(ahora);
+    abrirTramo(modo, ahora);
+    toast(modo==='campo' ? 'Ahora en campo' : 'Ahora en carretera');
+  }
+  guardar(); pintar();
+}
+
+/* ---------- hojas (diálogos) ---------- */
+let hojaAbierta = false;
+function abrirHoja(html, alPintar){
+  $('#hoja').innerHTML = html;
+  $('#scrim').classList.add('on');
+  if(!hojaAbierta){ history.pushState({hoja:true},''); hojaAbierta = true; }
+  if(alPintar) alPintar();
+  const f = $('#hoja').querySelector('input,button'); if(f) f.focus();
+}
+let ignorarPop = false;
+function cerrarHoja(desdeHistorial){
+  $('#scrim').classList.remove('on');
+  if(hojaAbierta){ hojaAbierta=false; if(!desdeHistorial){ ignorarPop=true; history.back(); } }
+}
+$('#scrim').addEventListener('click', e=>{ if(e.target.id==='scrim') cerrarHoja(); });
+
+function hojaTractor(){
+  if(S.sesion){
+    abrirHoja(`<h3>Sesión abierta</h3><p>Para cambiar de tractor, para antes la sesión del ${tractor(S.sel.tractor).nombre}.</p><div class="acciones"><button id="x">Entendido</button></div>`,
+      ()=>$('#x').onclick=()=>cerrarHoja());
+    return;
+  }
+  const ops = S.tractores.map(t=>`<button class="opc ${t.id===S.sel.tractor?'sel':''}" data-id="${t.id}"><span class="ico t">${I.tractor}</span><span><span class="n">${t.nombre}</span><br><span class="s">Horómetro ${fmtH(t.horometro)} h</span></span></button>`).join('');
+  abrirHoja(`<h3>Elige tractor</h3>${ops}`, ()=>{
+    $('#hoja').querySelectorAll('.opc').forEach(b=>b.onclick=()=>{
+      S.sel.tractor=b.dataset.id;
+      const ap = apero(S.sel.apero);
+      if(!ap || !esCompat(ap, S.sel.tractor)){
+        const c = S.aperos.find(a=>esCompat(a, S.sel.tractor));
+        S.sel.apero = c ? c.id : null;
+      }
+      guardar(); cerrarHoja(); pintar();
+    });
+  });
+}
+
+function hojaApero(){
+  const lista = S.aperos.filter(a=>esCompat(a, S.sel.tractor));
+  const titulo = S.sesion ? '¿A qué apero cambias?' : 'Elige apero';
+  const ops = lista.map(a=>`<button class="opc ${a.id===S.sel.apero?'sel':''}" data-id="${a.id}"><span class="ico a">${I.apero}</span><span><span class="n">${a.nombre}</span><br><span class="s">${a.tipo==='suspendido'?'Suspendido':'Arrastrado'}</span></span></button>`).join('');
+  abrirHoja(`<h3>${titulo}</h3><p>Solo aparecen los compatibles con el ${tractor(S.sel.tractor).nombre}.</p>${ops}`, ()=>{
+    $('#hoja').querySelectorAll('.opc').forEach(b=>b.onclick=()=>{
+      const nuevo = b.dataset.id;
+      if(nuevo===S.sel.apero){ cerrarHoja(); return; }
+      if(!S.sesion){ S.sel.apero=nuevo; guardar(); cerrarHoja(); pintar(); return; }
+      const viejo = apero(S.sel.apero), nu = apero(nuevo);
+      abrirHoja(`<h3>Cambiar de apero</h3><p>Se cierran las horas del ${viejo.nombre} y empiezan las del ${nu.nombre} ahora. Las horas del tractor siguen corriendo.</p><div class="acciones"><button id="no">Cancelar</button><button class="ok" id="si">Cambiar</button></div>`,()=>{
+        $('#no').onclick=()=>cerrarHoja();
+        $('#si').onclick=()=>{
+          const ahora=Date.now(), modo=S.sesion.tramos[S.sesion.tramos.length-1].modo;
+          cerrarTramo(ahora); S.sel.apero=nuevo; abrirTramo(modo, ahora);
+          guardar(); cerrarHoja(); pintar(); toast(`Ahora con ${nu.nombre}`);
+        };
+      });
+    });
+  });
+}
+
+function aLocal(ms){ const d=new Date(ms); d.setMinutes(d.getMinutes()-d.getTimezoneOffset()); return d.toISOString().slice(0,16); }
+
+function hojaStop(){
+  if(!S.sesion){ toast('No hay ninguna sesión abierta'); return; }
+  const ahora = Date.now();
+  const horas = (ahora - S.sesion.inicio)/H;
+  const larga = horas >= S.umbralLarga;
+  abrirHoja(`<h3>Parar sesión</h3>
+    <p>${larga ? `La sesión lleva ${fmtH(horas)} h abierta. Si se te olvidó pararla, ajusta la hora real de fin.` : `Duración: ${dur(ahora-S.sesion.inicio)}.`}</p>
+    <label class="f" for="fin">Hora de fin</label>
+    <input type="datetime-local" id="fin" value="${aLocal(ahora)}">
+    <div class="err" id="err"></div>
+    <div class="acciones"><button id="no">Cancelar</button><button class="peligro" id="si">Parar y guardar</button></div>`, ()=>{
+      $('#no').onclick=()=>cerrarHoja();
+      $('#fin').oninput=()=>{$('#err').textContent='';};
+      $('#si').onclick=()=>{
+        const vf = $('#fin').value, fin = vf===aLocal(ahora) ? Date.now() : new Date(vf).getTime();
+        if(!fin || isNaN(fin)){ $('#err').textContent='Indica una hora de fin.'; return; }
+        if(fin <= S.sesion.inicio){ $('#err').textContent='La hora de fin debe ser posterior al inicio de la sesión.'; return; }
+        if(fin > Date.now()+60000){ $('#err').textContent='La hora de fin no puede ser futura.'; return; }
+        const ses = S.sesion;
+        const quitar = tr => { if(!tr.fin) return; S.mants.forEach(m=>{ if(cuentaEnTramo(m,tr)) m.acum = Math.max(0, m.acum - Math.max(0,(tr.fin - Math.max(tr.inicio, m.desde||0))/H)); }); tr.fin=null; };
+        ses.tramos.filter(t=>t.inicio >= fin).forEach(quitar);
+        ses.tramos = ses.tramos.filter(t=>t.inicio < fin);
+        const ult = ses.tramos[ses.tramos.length-1];
+        if(ult.fin && ult.fin > fin) quitar(ult);
+        cerrarTramo(fin);
+        ses.fin = fin;
+        S.sesiones.push(ses); S.sesion = null;
+        guardar(); cerrarHoja(); pintar(); toast('Sesión guardada');
+      };
+  });
+}
+
+function campoNumero(id, valor, extra=''){
+  return `<div class="campo-num"><input id="${id}" type="number" inputmode="decimal" step="0.1" ${valor!==undefined?`value="${valor}"`:''} ${extra}><button class="cam" type="button" data-cam aria-label="Leer con la cámara">${I.cam}</button></div>`;
+}
+function enlazarCamaras(){
+  $('#hoja').querySelectorAll('[data-cam]').forEach(b=>b.onclick=()=>toast('La lectura con la cámara llegará en otro paso'));
+}
+
+function hojaHorometro(){
+  const t = tractor(S.sel.tractor);
+  abrirHoja(`<h3>Horómetro del ${t.nombre}</h3><p>Última lectura: ${fmtH(t.horometro)} h.</p>
+    <label class="f" for="h">Horas que marca ahora</label>${campoNumero('h')}
+    <div class="err" id="err"></div>
+    <div class="acciones"><button id="no">Cancelar</button><button class="ok" id="si">Guardar</button></div>`, ()=>{
+      enlazarCamaras();
+      $('#no').onclick=()=>cerrarHoja();
+      $('#h').oninput=()=>{$('#err').textContent='';};
+      $('#si').onclick=()=>{
+        const v = parseFloat($('#h').value);
+        if(isNaN(v)){ $('#err').textContent='Escribe las horas del horómetro.'; return; }
+        const aplicar = ()=>{
+          S.lecturas.push({fecha:Date.now(), tractor:t.id, horas:v, origen:'mano'});
+          t.horometro = v; guardar(); cerrarHoja(); pintar(); toast('Horómetro actualizado');
+        };
+        if(v < t.horometro || v - t.horometro > 24){
+          const motivo = v < t.horometro ? `es menor que la anterior (${fmtH(t.horometro)} h)` : `sube ${fmtH(v-t.horometro)} h desde la última`;
+          abrirHoja(`<h3>Revisa la lectura</h3><p>${fmtH(v)} h ${motivo}. ¿Es correcta?</p><div class="acciones"><button id="no2">Corregir</button><button class="ok" id="si2">Sí, guardar</button></div>`,()=>{
+            $('#no2').onclick=hojaHorometro; $('#si2').onclick=aplicar;
+          });
+          return;
+        }
+        aplicar();
+      };
+  });
+}
+
+function hojaRepostar(){
+  let prod='gasoil', orig='coop';
+  const dibujar = ()=>{
+    const t = tractor(S.sel.tractor);
+    const dep = prod==='gasoil' && orig==='dep';
+    abrirHoja(`<h3>Repostar el ${t.nombre}</h3>
+      <div class="seg" id="sp"><button data-v="gasoil" class="${prod==='gasoil'?'sel':''}">Gasoil</button><button data-v="adblue" class="${prod==='adblue'?'sel':''}">AdBlue</button></div>
+      ${prod==='gasoil'?`<div class="seg" id="so"><button data-v="coop" class="${orig==='coop'?'sel':''}">Cooperativa</button><button data-v="dep" class="${orig==='dep'?'sel':''}">Depósito</button></div>`:''}
+      ${dep ? `<label class="f" for="a">Litros en el tractor antes</label>${campoNumero('a')}<label class="f" for="b">Litros en el tractor después</label>${campoNumero('b')}<p class="nota">El precio se calculará con el precio medio del depósito.</p>`
+            : `<label class="f" for="l">Litros</label>${campoNumero('l')}<label class="f" for="p">Importe total (€)</label>${campoNumero('p',undefined,'step="0.01"')}`}
+      <div class="err" id="err"></div>
+      <div class="acciones"><button id="no">Cancelar</button><button class="ok" id="si">Guardar</button></div>`, ()=>{
+        enlazarCamaras();
+        $('#sp').querySelectorAll('button').forEach(b=>b.onclick=()=>{prod=b.dataset.v; dibujar();});
+        if($('#so')) $('#so').querySelectorAll('button').forEach(b=>b.onclick=()=>{orig=b.dataset.v; dibujar();});
+        $('#no').onclick=()=>cerrarHoja();
+        $('#si').onclick=()=>{
+          const r = {fecha:Date.now(), producto:prod, origen: prod==='adblue'?'coop':orig, tractor:t.id, apero:S.sel.apero};
+          if(dep){
+            const a=parseFloat($('#a').value), b=parseFloat($('#b').value);
+            if(isNaN(a)||isNaN(b)){ $('#err').textContent='Escribe los litros de antes y de después.'; return; }
+            if(b<=a){ $('#err').textContent='Los litros de después deben ser más que los de antes.'; return; }
+            r.antes=a; r.despues=b; r.litros=b-a;
+          } else {
+            const l=parseFloat($('#l').value), p=parseFloat($('#p').value);
+            if(isNaN(l)||l<=0){ $('#err').textContent='Escribe los litros.'; return; }
+            if(isNaN(p)||p<0){ $('#err').textContent='Escribe el importe.'; return; }
+            r.litros=l; r.importe=p;
+          }
+          S.repostajes.push(r); guardar(); cerrarHoja(); if(seccion==='gasoil') pintar(); toast(`${fmtH(r.litros)} L de ${prod==='gasoil'?'gasoil':'AdBlue'} guardados`);
+        };
+    });
+  };
+  dibujar();
+}
+
+/* ---------- vistas ---------- */
+let seccion = 'inicio';
+function pintarNav(){
+  $('#nav').innerHTML = SECCIONES.map(([id,txt,ic])=>`<button data-s="${id}" class="${id===seccion?'act':''}" ${id===seccion?'aria-current="page"':''}>${ic}<span>${txt}</span></button>`).join('');
+  $('#nav').querySelectorAll('button').forEach(b=>b.onclick=()=>irA(b.dataset.s));
+}
+function irA(id, desdeHistorial){
+  if(id===seccion) return;
+  if(id==='dias') diasModo='cal';
+  if(id==='maquinas') maqFicha=null;
+  if(!desdeHistorial) history.pushState({s:id},'');
+  seccion=id; pintar();
+}
+
+function pintarInicio(){
+  if(!tractor(S.sel.tractor) && S.tractores.length){ S.sel.tractor=S.tractores[0].id; }
+  const t = tractor(S.sel.tractor), a = apero(S.sel.apero);
+  if(!t){
+    $('#vista').innerHTML = `<section class="bienv"><h2>Bienvenido</h2><p>Para empezar, da de alta tu primer tractor con sus mantenimientos. Despu\u00e9s podr\u00e1s a\u00f1adir los aperos.</p><button class="chip" id="alta" style="width:100%">Dar de alta mi tractor</button></section>`;
+    $('#alta').onclick=()=>asistente();
+    return;
+  }
+  const tr = S.sesion && S.sesion.tramos[S.sesion.tramos.length-1];
+  const modo = tr ? tr.modo : null;
+  const relevantes = S.mants.filter(m=>m.maq===t.id || (a && m.maq===a.id))
+    .map(m=>({m, r:horasRestantes(m), e:estadoMant(m)}))
+    .filter(x=>x.e).sort((x,y)=>x.r-y.r).slice(0,3);
+  $('#vista').innerHTML = `
+    <section class="maquinas" aria-label="Máquina y apero">
+      <button class="maq" id="bt"><span class="ico t">${I.tractor}</span><span><span class="n">${t.nombre}</span><br><span class="s">Horómetro ${fmtH(t.horometro)} h</span></span></button>
+      <button class="maq" id="ba"><span class="ico a">${I.apero}</span><span><span class="n">${a?a.nombre:'Sin apero'}</span><br><span class="s">${a?(a.tipo==='suspendido'?'Suspendido':'Arrastrado'):'Elige uno'}</span></span><span class="sw" aria-hidden="true">${I.swap}</span></button>
+    </section>
+    <div class="aviso-largo" id="largo"></div>
+    <div class="reloj ${S.sesion?'':'parado'}" id="reloj" aria-live="off">00:00:00</div>
+    <div class="reloj-sub">${S.sesion ? (modo==='campo'?'Trabajando en campo':'En carretera') : 'Sin sesión abierta'}</div>
+    <div class="controles">
+      <button class="btn carretera ${modo==='carretera'?'on':''} ${modo==='campo'?'tenue':''}" id="bc" aria-pressed="${modo==='carretera'}">${I.road}Carretera</button>
+      <button class="stop ${S.sesion?'on':''}" id="bs" aria-label="Parar sesión">STOP</button>
+      <button class="btn campo ${modo==='campo'?'on':''} ${modo==='carretera'?'tenue':''}" id="bf" aria-pressed="${modo==='campo'}">${I.campo}Campo</button>
+    </div>
+    <div class="rapidos">
+      <button class="chip" id="bh">${I.cam}Horómetro</button>
+      <button class="chip" id="br">${I.gas}Repostar</button>
+    </div>
+    <section class="avisos" aria-label="Avisos más urgentes">
+      <h2>Avisos de lo que llevas puesto</h2>
+      ${relevantes.length ? relevantes.map(({m,r,e})=>`<div class="av"><span class="dot ${e}" aria-label="${e==='r'?'Pasado':'Inminente'}"></span><span>${m.nombre}<br><span style="font-size:13px;color:var(--text2)">${m.maq===t.id?t.nombre:a.nombre}</span></span><span class="q">${r<0?`pasado ${fmtH(-r)} h`:`faltan ${fmtH(r)} h`}</span></div>`).join('') : '<div class="vacio">Todo al día con esta máquina y este apero.</div>'}
+    </section>`;
+  $('#bt').onclick=hojaTractor; $('#ba').onclick=hojaApero;
+  $('#bc').onclick=()=>pulsarModo('carretera'); $('#bf').onclick=()=>pulsarModo('campo');
+  $('#bs').onclick=hojaStop; $('#bh').onclick=hojaHorometro; $('#br').onclick=hojaRepostar;
+  tic();
+}
+
+/* ---------- máquinas ---------- */
+let maqFicha = null;
+const TIPOS = {autopropulsada:'Autopropulsada', arrastrado:'Arrastrado', suspendido:'Suspendido'};
+const nuevoId = p => p + Date.now().toString(36) + Math.random().toString(36).slice(2,5);
+const icoMaq = x => tractor(x.id) ? `<span class="ico t">${I.tractor}</span>` : `<span class="ico a">${I.apero}</span>`;
+function horasTrabajo(id){
+  const esT = !!tractor(id);
+  return todasSesiones().reduce((s,{s:ses})=> s + ses.tramos.reduce((x,t)=>{
+    const ap = apero(t.apero);
+    const vale = esT ? t.tractor===id : (t.apero===id && (t.modo==='campo' || (ap && ap.tipo==='arrastrado')));
+    return x + (vale ? (t.fin-t.inicio)/H : 0);
+  },0),0);
+}
+function opsCuenta(tipo){
+  if(tipo==='autopropulsada') return [['siempre','En carretera y en campo'],['campo','Solo en campo'],['alza','Solo en campo con apero suspendido (alza)']];
+  if(tipo==='arrastrado') return [['campo','Solo en campo'],['siempre','En campo y en carretera (ruedas)']];
+  return [['campo','Solo en campo']];
+}
+const tipoDe = id => tractor(id) ? 'autopropulsada' : apero(id).tipo;
+
+function pintarMaquinas(){
+  if(maqFicha) return pintarFicha();
+  const fila = x => {
+    const ms = S.mants.filter(m=>m.maq===x.id);
+    const r = ms.filter(m=>estadoMant(m)==='r').length, y = ms.filter(m=>estadoMant(m)==='y').length;
+    const sub = tractor(x.id) ? `Horómetro ${fmtH(x.horometro)} h` : `${TIPOS[x.tipo]}, ${fmtH(horasTrabajo(x.id))} h de trabajo`;
+    return `<button class="maq" data-id="${x.id}">${icoMaq(x)}<span><span class="n">${x.nombre}</span><br><span class="s">${sub}</span></span><span class="cnt">${r?`<span class="dot r"></span>${r}`:''}${y?` <span class="dot y"></span>${y}`:''}</span></button>`;
+  };
+  $('#vista').innerHTML = `<button class="chip" id="nueva" style="width:100%">Añadir máquina o apero</button>
+    <h2 class="secc">Tractores y autopropulsadas</h2><section class="maquinas">${S.tractores.map(fila).join('')}</section>
+    <h2 class="secc">Aperos</h2><section class="maquinas">${S.aperos.length?S.aperos.map(fila).join(''):'<div class="vacio" style="padding:14px">Todavía no hay aperos.</div>'}</section>`;
+  $('#nueva').onclick=()=>asistente();
+  document.querySelectorAll('.maquinas .maq').forEach(b=>b.onclick=()=>{ maqFicha=b.dataset.id; history.pushState({s:'maquinas'},''); pintar(); });
+}
+
+function pintarFicha(){
+  const id = maqFicha, esT = !!tractor(id), x = tractor(id) || apero(id);
+  if(!x){ maqFicha=null; return pintarMaquinas(); }
+  let datos;
+  if(esT){
+    const lect = S.lecturas.filter(l=>l.tractor===id).sort((a,b)=>b.fecha-a.fecha)[0];
+    const sinReg = (x.horometro - x.horometroAlta) - horasTrabajo(id);
+    datos = `<dt>Tipo</dt><dd>Autopropulsada</dd>
+      <dt>Horómetro</dt><dd>${fmtH(x.horometro)} h<br><span class="s" style="color:var(--text2);font-size:13px">${lect?'Última lectura '+fecha(lect.fecha):'Sin lecturas desde el alta'}</span></dd>
+      <dt>Trabajo registrado</dt><dd>${fmtH(horasTrabajo(id))} h</dd>
+      <dt>Sin registrar</dt><dd>${sinReg>=0 ? `${fmtH(sinReg)} h<br><span style="color:var(--text2);font-size:13px">Ralentí, maniobras o sesiones sin apuntar</span>` : `${fmtH(-sinReg)} h de más<br><span style="color:var(--text2);font-size:13px">Has registrado más horas de las que ha subido el horómetro: actualízalo</span>`}</dd>`;
+  } else {
+    datos = `<dt>Tipo</dt><dd>${TIPOS[x.tipo]}</dd>
+      <dt>Trabajo</dt><dd>${fmtH(horasTrabajo(id))} h</dd>
+      <dt>Compatible con</dt><dd>${x.compatTodos ? 'Todos los tractores' : (x.compat||[]).map(t=>tractor(t)?.nombre).filter(Boolean).join(', ')}</dd>`;
+  }
+  const ms = S.mants.filter(m=>m.maq===id).map(m=>({m, r:horasRestantes(m), e:estadoMant(m)})).sort((a,b)=>a.r-b.r);
+  $('#vista').innerHTML = `<div class="mes"><button class="flecha" id="vb" aria-label="Volver a Máquinas">${FL.izq}</button><h2>${x.nombre}</h2><button class="flecha" id="ren" aria-label="Cambiar nombre"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg></button></div>
+    <section class="dep"><dl class="det" style="margin:0">${datos}</dl></section>
+    <h2 class="secc">Mantenimientos</h2>
+    <div class="lista">${ms.length ? ms.map(({m,r,e})=>`<button class="mov" data-m="${m.id}" style="align-items:center"><span class="dot ${e||'n'}"></span><span class="fx"><span class="n">${m.nombre}</span><br><span class="s" style="font-size:13px;color:var(--text2)">Cada ${m.intervalo} h, ${m.reloj==='motor'?'por horómetro':'por horas de trabajo'}</span></span><span class="der">${textoRestante(r)}</span></button>`).join('') : '<div class="vacio" style="padding:14px">Sin mantenimientos todavía.</div>'}</div>
+    <div class="acc3"><button class="chip" id="am">Añadir mantenimiento</button><button class="chip" id="dup">Duplicar</button></div>`;
+  $('#vb').onclick=()=>history.back();
+  $('#ren').onclick=()=>hojaRenombrar(id);
+  $('#am').onclick=()=>hojaNuevoMant(id);
+  $('#dup').onclick=()=>asistente({paso:1, nombre:x.nombre+' (copia)', tipo:tipoDe(id), estado:'nueva', horometro:'', mants:S.mants.filter(m=>m.maq===id).map(m=>({nombre:m.nombre, intervalo:m.intervalo, reloj:m.reloj, cuenta:m.cuenta||'campo', ultimo:null}))});
+  document.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>hojaDetalle(b.dataset.m));
+}
+
+function hojaRenombrar(id){
+  const x = tractor(id) || apero(id);
+  abrirHoja(`<h3>Cambiar nombre</h3><label class="f" for="nm">Nombre</label><input id="nm" value="${x.nombre.replace(/"/g,'&quot;')}"><div class="err" id="err"></div><div class="acciones"><button id="no">Cancelar</button><button class="ok" id="si">Guardar</button></div>`,()=>{
+    $('#no').onclick=()=>cerrarHoja();
+    $('#si').onclick=()=>{ const v=$('#nm').value.trim(); if(!v){ $('#err').textContent='Escribe un nombre.'; return; } x.nombre=v; guardar(); cerrarHoja(); pintar(); toast('Nombre cambiado'); };
+  });
+}
+
+function formMant(tipo, estado, horometro){
+  const conReloj = tipo==='autopropulsada';
+  return `<label class="f" for="mn">Nombre</label><input id="mn" placeholder="Engrasar rótulas del eje">
+    <label class="f" for="mi">Cada cuántas horas</label>${campoNumero('mi')}
+    ${conReloj?`<label class="f">Cuenta por</label><div class="seg" id="mr"><button data-v="trabajo" class="sel">Horas de trabajo</button><button data-v="motor">Horómetro</button></div>`:''}
+    <div id="mcw"><label class="f" for="mc">Cuándo cuentan las horas</label><select id="mc">${opsCuenta(tipo).map(([v,t])=>`<option value="${v}">${t}</option>`).join('')}</select></div>
+    ${estado==='usada'?`<label class="f" for="mu" id="mul">Horas de trabajo desde la última vez</label>${campoNumero('mu',0)}`:''}`;
+}
+function leerFormMant(tipo, estado, horometro){
+  const rel = $('#mr') ? $('#mr').querySelector('.sel').dataset.v : 'trabajo';
+  const n=$('#mn').value.trim(), iv=leerNum('mi');
+  if(!n) return {error:'Escribe el nombre del mantenimiento.'};
+  if(!iv||iv<=0) return {error:'Indica cada cuántas horas toca.'};
+  let ultimo = null;
+  if(estado==='usada'){
+    ultimo = leerNum('mu');
+    if(ultimo==null||ultimo<0) return {error: rel==='motor'?'Indica el horómetro de la última vez.':'Indica las horas desde la última vez (0 si se acaba de hacer).'};
+    if(rel==='motor' && horometro!=null && ultimo>horometro) return {error:'No puede ser mayor que el horómetro actual.'};
+  }
+  return {nombre:n, intervalo:iv, reloj:rel, cuenta: rel==='motor'?null:$('#mc').value, ultimo};
+}
+function enlazarFormMant(estado, horometro){
+  if(!$('#mr')) return;
+  $('#mr').querySelectorAll('button').forEach(b=>b.onclick=()=>{
+    $('#mr').querySelectorAll('button').forEach(x=>x.classList.toggle('sel',x===b));
+    const motor = b.dataset.v==='motor';
+    $('#mcw').style.display = motor ? 'none' : '';
+    if(estado==='usada'){ $('#mul').textContent = motor ? 'Horómetro cuando se hizo la última vez' : 'Horas de trabajo desde la última vez'; $('#mu').value = motor ? (horometro??'') : 0; }
+  });
+}
+function crearMant(maqId, d, horometro){
+  const m = {id:nuevoId('k'), maq:maqId, nombre:d.nombre, intervalo:d.intervalo, reloj:d.reloj};
+  if(d.reloj==='motor') m.ultima = d.ultimo!=null ? d.ultimo : horometro;
+  else { m.cuenta=d.cuenta; m.acum = d.ultimo!=null ? d.ultimo : 0; m.desde = Date.now(); }
+  S.mants.push(m);
+}
+
+function hojaNuevoMant(maqId){
+  const tipo = tipoDe(maqId), t = tractor(maqId);
+  abrirHoja(`<h3>Nuevo mantenimiento</h3><p>${(t||apero(maqId)).nombre}. Indica cuándo se hizo por última vez para que el aviso salga cuadrado.</p>${formMant(tipo,'usada',t?t.horometro:null)}<div class="err" id="err"></div><div class="acciones"><button id="no">Cancelar</button><button class="ok" id="si">Añadir</button></div>`,()=>{
+    enlazarCamaras(); enlazarFormMant('usada', t?t.horometro:null);
+    $('#no').onclick=()=>cerrarHoja();
+    $('#si').onclick=()=>{ const d=leerFormMant(tipo,'usada',t?t.horometro:null); if(d.error){ $('#err').textContent=d.error; return; } crearMant(maqId,d,t?t.horometro:null); guardar(); cerrarHoja(); pintar(); toast('Mantenimiento añadido'); };
+  });
+}
+
+function hojaEditarMant(id){
+  const m = S.mants.find(x=>x.id===id);
+  abrirHoja(`<h3>Editar mantenimiento</h3><label class="f" for="mn">Nombre</label><input id="mn" value="${m.nombre.replace(/"/g,'&quot;')}"><label class="f" for="mi">Cada cuántas horas</label>${campoNumero('mi', m.intervalo)}<div class="err" id="err"></div>
+    <div class="acciones"><button id="no">Cancelar</button><button class="ok" id="si">Guardar</button></div><div class="acciones"><button class="peligro" id="del">Borrar mantenimiento</button></div>`,()=>{
+    enlazarCamaras();
+    $('#no').onclick=()=>cerrarHoja();
+    $('#si').onclick=()=>{ const n=$('#mn').value.trim(), iv=leerNum('mi'); if(!n){ $('#err').textContent='Escribe un nombre.'; return; } if(!iv||iv<=0){ $('#err').textContent='Indica cada cuántas horas toca.'; return; } m.nombre=n; m.intervalo=iv; guardar(); cerrarHoja(); pintar(); toast('Mantenimiento actualizado'); };
+    $('#del').onclick=()=>abrirHoja(`<h3>¿Borrar ${m.nombre}?</h3><p>Deja de contar y desaparece de los avisos. El historial de veces que se hizo se conserva.</p><div class="acciones"><button id="no2">Cancelar</button><button class="peligro" id="si2">Borrar</button></div>`,()=>{
+      $('#no2').onclick=()=>cerrarHoja();
+      $('#si2').onclick=()=>{ S.mants=S.mants.filter(x=>x.id!==id); guardar(); cerrarHoja(); pintar(); toast('Mantenimiento borrado'); };
+    });
+  });
+}
+
+function asistente(base){
+  const w = base || {paso:1, nombre:'', tipo:'autopropulsada', estado:'nueva', horometro:'', mants:[]};
+  const total = () => w.tipo==='autopropulsada' ? 3 : 4;
+  const cab = t => `<p class="wz">Paso ${w.paso} de ${total()}</p><h3>${t}</h3>`;
+  const pie = (sig) => `<div class="err" id="err"></div><div class="acciones"><button id="atr">${w.paso===1?'Cancelar':'Atrás'}</button><button class="ok" id="sig">${sig}</button></div>`;
+  const atras = () => { if(w.paso===1) cerrarHoja(); else { w.paso--; asistente(w); } };
+  const horo = () => w.tipo==='autopropulsada' ? parseFloat(w.horometro) : null;
+  if(w.paso===1){
+    abrirHoja(`${cab('Nueva máquina')}<label class="f" for="nm">Nombre</label><input id="nm" placeholder="Puma 240" value="${w.nombre.replace(/"/g,'&quot;')}">
+      <label class="f">Tipo</label><div class="seg" id="tp">${Object.entries(TIPOS).map(([v,t])=>`<button data-v="${v}" class="${w.tipo===v?'sel':''}">${t}</button>`).join('')}</div>
+      <p class="nota">Autopropulsada: tractores, cosechadora. Arrastrado: va sobre sus ruedas. Suspendido: va colgado del alza.</p>${pie('Siguiente')}`,()=>{
+        $('#tp').querySelectorAll('button').forEach(b=>b.onclick=()=>{ if(w.tipo!==b.dataset.v){ w.tipo=b.dataset.v; w.mants=[]; } w.nombre=$('#nm').value; asistente(w); });
+        $('#atr').onclick=atras;
+        $('#sig').onclick=()=>{ w.nombre=$('#nm').value.trim(); if(!w.nombre){ $('#err').textContent='Escribe un nombre.'; return; } w.paso=2; asistente(w); };
+    });
+  } else if(w.paso===2){
+    abrirHoja(`${cab('¿Nueva o usada?')}<div class="seg" id="es"><button data-v="nueva" class="${w.estado==='nueva'?'sel':''}">Nueva</button><button data-v="usada" class="${w.estado==='usada'?'sel':''}">Usada</button></div>
+      <p class="nota">${w.estado==='nueva'?'Los mantenimientos empiezan desde cero.':'En el siguiente paso indicarás cuándo se hizo cada mantenimiento por última vez.'}</p>
+      ${w.tipo==='autopropulsada'?`<label class="f" for="ho">Horas del horómetro ahora</label>${campoNumero('ho', w.horometro===''?undefined:w.horometro)}<p class="nota">Aunque sea nueva, puede traer algunas horas.</p>`:'<p class="nota">Los aperos no tienen horómetro: sus horas las cuenta la app con las sesiones.</p>'}${pie('Siguiente')}`,()=>{
+        enlazarCamaras();
+        $('#es').querySelectorAll('button').forEach(b=>b.onclick=()=>{ w.estado=b.dataset.v; if($('#ho')) w.horometro=$('#ho').value; asistente(w); });
+        $('#atr').onclick=atras;
+        $('#sig').onclick=()=>{
+          if(w.tipo==='autopropulsada'){ w.horometro=$('#ho').value; const h=parseFloat(w.horometro); if(isNaN(h)||h<0){ $('#err').textContent='Indica las horas del horómetro.'; return; } }
+          w.paso=3; asistente(w);
+        };
+    });
+  } else if(w.paso===3){
+    const lista = w.mants.map((m,k)=>`<div class="mitem"><span>${m.nombre}<span class="s">Cada ${m.intervalo} h, ${m.reloj==='motor'?'horómetro':'horas de trabajo'}${w.estado==='usada'&&m.ultimo!=null?(m.reloj==='motor'?`, última a las ${fmtH(m.ultimo)} h`:`, hace ${fmtH(m.ultimo)} h`):''}${w.estado==='usada'&&m.ultimo==null?', falta la última vez':''}</span></span><button data-k="${k}" aria-label="Quitar ${m.nombre}">×</button></div>`).join('');
+    abrirHoja(`${cab('Mantenimientos')}<p>Añade los que quieras ahora; más adelante puedes añadir otros desde la ficha.</p>${lista?`<div>${lista}</div>`:''}
+      <div class="caja">${formMant(w.tipo, w.estado, horo())}<div class="err" id="err2"></div><div class="acciones"><button id="add">Añadir a la lista</button></div></div>
+      ${pie(total()===3?'Guardar máquina':'Siguiente')}`,()=>{
+        enlazarCamaras(); enlazarFormMant(w.estado, horo());
+        document.querySelectorAll('.mitem button').forEach(b=>b.onclick=()=>{ w.mants.splice(+b.dataset.k,1); asistente(w); });
+        $('#add').onclick=()=>{ const d=leerFormMant(w.tipo, w.estado, horo()); if(d.error){ $('#err2').textContent=d.error; return; } w.mants.push(d); asistente(w); };
+        $('#atr').onclick=atras;
+        $('#sig').onclick=()=>{
+          if(w.estado==='usada' && w.mants.some(m=>m.ultimo==null)){ $('#err').textContent='Falta indicar la última vez de algún mantenimiento: quítalo y vuelve a añadirlo.'; return; }
+          if(total()===3) finalizar(); else { w.paso=4; asistente(w); }
+        };
+    });
+  } else {
+    abrirHoja(`${cab('Compatibilidad')}<p>Con qué tractores se puede usar este apero.</p><div class="seg"><button class="sel">Todos los tractores</button></div><p class="nota">Elegir tractores concretos llegará en una versión siguiente.</p>${pie('Guardar apero')}`,()=>{
+      $('#atr').onclick=atras;
+      $('#sig').onclick=finalizar;
+    });
+  }
+  function finalizar(){
+    const id = nuevoId(w.tipo==='autopropulsada'?'t':'a');
+    if(w.tipo==='autopropulsada'){ const h=parseFloat(w.horometro); S.tractores.push({id, nombre:w.nombre, horometro:h, horometroAlta:h}); if(!S.sel.tractor) S.sel.tractor=id; }
+    else { S.aperos.push({id, nombre:w.nombre, tipo:w.tipo, compatTodos:true, compat:[]}); if(!S.sel.apero) S.sel.apero=id; }
+    w.mants.forEach(d=>crearMant(id, w.estado==='usada'?d:{...d, ultimo:null}, horo()));
+    guardar(); cerrarHoja(); toast(`${w.nombre} añadido`);
+    setTimeout(()=>{ seccion='maquinas'; maqFicha=id; history.pushState({s:'maquinas'},''); pintar(); }, 80);
+  }
+}
+
+/* ---------- días pasados ---------- */
+const FL = {
+  izq:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>',
+  der:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>'
+};
+let diasModo='cal', calMes=null, diaSel=null;
+const inicioDia = ms => { const d=new Date(ms); d.setHours(0,0,0,0); return d.getTime(); };
+const sumarDias = (ms,n) => { const d=new Date(ms); d.setDate(d.getDate()+n); return d.getTime(); };
+const hora = ms => new Date(ms).toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'});
+const nombreApero = id => { const a=apero(id); return a ? a.nombre : 'Sin apero'; };
+function todasSesiones(){
+  const l = S.sesiones.map((s,i)=>({s,i}));
+  if(S.sesion){ const tr=S.sesion.tramos.map(t=>({...t, fin:t.fin||Date.now()})); l.push({s:{...S.sesion, tramos:tr, fin:Date.now()}, i:-1}); }
+  return l;
+}
+function diasTrabajados(){
+  const set = new Set();
+  todasSesiones().forEach(({s})=>{ for(let d=inicioDia(s.inicio); d<s.fin; d=sumarDias(d,1)) set.add(d); });
+  return set;
+}
+
+function pintarDias(){
+  if(diasModo==='dia') return pintarDia();
+  if(calMes==null){ const d=new Date(); calMes=new Date(d.getFullYear(), d.getMonth(), 1).getTime(); }
+  const m = new Date(calMes), anio=m.getFullYear(), mes=m.getMonth();
+  const primero = (new Date(anio,mes,1).getDay()+6)%7, nd = new Date(anio,mes+1,0).getDate();
+  const trab = diasTrabajados(), hoy = inicioDia(Date.now());
+  let celdas = ['L','M','X','J','V','S','D'].map(d=>`<div class="wd">${d}</div>`).join('');
+  for(let i=0;i<primero;i++) celdas += '<div></div>';
+  for(let d=1; d<=nd; d++){
+    const ms = new Date(anio,mes,d).getTime(), con = trab.has(ms);
+    celdas += `<button data-d="${ms}" class="${con?'con':''} ${ms===hoy?'hoy':''}" aria-label="${d}${con?', con trabajo':''}">${d}${con?'<span class="pt"></span>':''}</button>`;
+  }
+  const titulo = m.toLocaleDateString('es-ES',{month:'long',year:'numeric'}).replace(/^./,c=>c.toUpperCase());
+  $('#vista').innerHTML = `<div class="mes"><button class="flecha" id="pm" aria-label="Mes anterior">${FL.izq}</button><h2>${titulo}</h2><button class="flecha" id="sm" aria-label="Mes siguiente">${FL.der}</button></div><div class="cal">${celdas}</div><p class="pista">Toca un día para verlo en formato agenda.</p>`;
+  $('#pm').onclick=()=>{ const x=new Date(calMes); x.setMonth(x.getMonth()-1); calMes=x.getTime(); pintarDias(); };
+  $('#sm').onclick=()=>{ const x=new Date(calMes); x.setMonth(x.getMonth()+1); calMes=x.getTime(); pintarDias(); };
+  document.querySelectorAll('.cal button').forEach(b=>b.onclick=()=>{ diaSel=+b.dataset.d; diasModo='dia'; history.pushState({s:'dias'},''); pintarDias(); });
+}
+
+function pintarDia(){
+  const d0=diaSel, d1=sumarDias(d0,1), PX=56;
+  const bloques=[];
+  todasSesiones().forEach(({s,i})=>{
+    s.tramos.forEach(t=>{
+      const a=Math.max(t.inicio,d0), b=Math.min(t.fin,d1);
+      if(b>a) bloques.push({a,b,t,i,partida: t.inicio<d0 || t.fin>d1});
+    });
+  });
+  const titulo = new Date(d0).toLocaleDateString('es-ES',{weekday:'long',day:'numeric',month:'long'}).replace(/^./,c=>c.toUpperCase());
+  let cuerpo;
+  if(!bloques.length){ cuerpo = '<div class="lista"><div class="vacio" style="padding:16px">Este día no hay sesiones.</div></div>'; }
+  else {
+    const hIni = Math.max(0, Math.floor((Math.min(...bloques.map(x=>x.a))-d0)/H)-1);
+    const hFin = Math.min(24, Math.ceil((Math.max(...bloques.map(x=>x.b))-d0)/H)+1);
+    let html = '';
+    for(let h=hIni; h<=hFin; h++) html += `<div class="hl" style="top:${(h-hIni)*PX}px">${String(h).padStart(2,'0')}:00</div>`;
+    bloques.forEach(x=>{
+      const top=((x.a-d0)/H-hIni)*PX, alto=Math.max(24,(x.b-x.a)/H*PX-2);
+      const txt=`${x.t.modo==='campo'?'Campo':'Carretera'}, ${nombreApero(x.t.apero)}<br>${hora(x.a)} a ${x.i===-1&&x.t.fin>=Date.now()-1000?'ahora':hora(x.b)}${x.partida?' (sesión partida)':''}`;
+      html += `<button class="blk ${x.t.modo} ${x.i===-1?'abierta':''}" data-i="${x.i}" style="top:${top+1}px;height:${alto}px">${txt}</button>`;
+    });
+    cuerpo = `<div class="agenda" style="height:${(hFin-hIni)*PX+8}px">${html}</div>`;
+  }
+  $('#vista').innerHTML = `<div class="mes"><button class="flecha" id="pd" aria-label="Día anterior">${FL.izq}</button><h2>${titulo}</h2><button class="flecha" id="sd" aria-label="Día siguiente">${FL.der}</button></div>${cuerpo}<p class="pista">Toca un tramo para ver y corregir su sesión. Para volver al calendario, usa atrás.</p>`;
+  $('#pd').onclick=()=>{ diaSel=sumarDias(diaSel,-1); pintarDias(); };
+  $('#sd').onclick=()=>{ diaSel=sumarDias(diaSel,1); pintarDias(); };
+  document.querySelectorAll('.blk').forEach(b=>b.onclick=()=>hojaSesion(+b.dataset.i));
+}
+
+function aporte(m, tramos){
+  return tramos.reduce((s,t)=> s + (cuentaEnTramo(m,t) ? Math.max(0,(t.fin - Math.max(t.inicio, m.desde||0))/H) : 0), 0);
+}
+
+function hojaSesion(i, borrador){
+  if(i===-1){
+    abrirHoja(`<h3>Sesión en curso</h3><p>Esta sesión sigue abierta. Podrás ajustarla al pararla o, después, desde aquí.</p><div class="acciones"><button id="no">Cerrar</button></div>`,()=>$('#no').onclick=()=>cerrarHoja());
+    return;
+  }
+  const ses = S.sesiones[i];
+  const d = borrador || ses.tramos.map(t=>({...t}));
+  const cambiado = JSON.stringify(d)!==JSON.stringify(ses.tramos);
+  const ini=d[0].inicio, fin=d[d.length-1].fin, total=(fin-ini)/H;
+  const cruza = inicioDia(ini)!==inicioDia(fin-1);
+  const lista = d.map((t,j)=>`<button class="tramo" data-j="${j}"><span class="bar ${t.modo}"></span><span>${t.modo==='campo'?'Campo':'Carretera'}<br><span class="s" style="font-size:13px;color:var(--text2)">${nombreApero(t.apero)}</span></span><span class="der">${hora(t.inicio)} a ${hora(t.fin)}</span></button>`).join('');
+  abrirHoja(`<h3>Sesión de ${hora(ini)} a ${hora(fin)}</h3>
+    <p>${tractor(ses.tractor).nombre}, ${fmtH(total)} h en total.${cruza?' Cruza la medianoche: se ve en los dos días.':''}${cambiado?' Tienes cambios sin guardar.':''}</p>
+    <div class="tramos">${lista}</div>
+    <p class="nota">Toca un tramo para cambiar sus horas, su modo o su apero, o para meter un cambio de apero a una hora.</p>
+    <div class="acciones"><button id="no">${cambiado?'Descartar':'Cerrar'}</button><button class="ok" id="si" ${cambiado?'':'style="display:none"'}>Revisar y guardar</button></div>
+    <div class="acciones"><button class="peligro" id="del">Borrar sesión</button></div>`,()=>{
+      document.querySelectorAll('.tramo').forEach(b=>b.onclick=()=>hojaTramo(i, d, +b.dataset.j));
+      $('#no').onclick=()=>cerrarHoja();
+      $('#si').onclick=()=>hojaPrevia(i, d);
+      $('#del').onclick=()=>hojaPrevia(i, [], true);
+  });
+}
+
+function hojaTramo(i, d, j){
+  const t = d[j], ses = S.sesiones[i];
+  const aps = S.aperos.filter(a=>esCompat(a, ses.tractor));
+  const opsAp = sel => aps.map(a=>`<option value="${a.id}" ${a.id===sel?'selected':''}>${a.nombre}</option>`).join('');
+  abrirHoja(`<h3>Tramo ${j+1} de ${d.length}</h3>
+    <div class="seg" id="md"><button data-v="carretera" class="${t.modo==='carretera'?'sel':''}">Carretera</button><button data-v="campo" class="${t.modo==='campo'?'sel':''}">Campo</button></div>
+    <label class="f" for="ti">Empieza</label><input type="datetime-local" id="ti" value="${aLocal(t.inicio)}">
+    <label class="f" for="tf">Termina</label><input type="datetime-local" id="tf" value="${aLocal(t.fin)}">
+    <label class="f" for="ta">Apero</label><select id="ta">${opsAp(t.apero)}</select>
+    <div class="err" id="err"></div>
+    <div class="acciones"><button id="no">Volver</button><button class="ok" id="si">Aplicar</button></div>
+    <hr class="sep"><p class="peq">Cambio de apero dentro de este tramo</p>
+    <p class="nota" style="margin-top:0">Si a mitad del tramo cambiaste de apero y no lo marcaste.</p>
+    <label class="f" for="dh">A qué hora</label><input type="datetime-local" id="dh" value="${aLocal(t.inicio+(t.fin-t.inicio)/2)}">
+    <label class="f" for="da">Nuevo apero</label><select id="da">${opsAp(aps.find(a=>a.id!==t.apero)?.id)}</select>
+    <div class="err" id="err2"></div>
+    <div class="acciones"><button id="div">Meter cambio de apero</button></div>`,()=>{
+      let modo=t.modo;
+      $('#md').querySelectorAll('button').forEach(b=>b.onclick=()=>{ modo=b.dataset.v; $('#md').querySelectorAll('button').forEach(x=>x.classList.toggle('sel',x===b)); });
+      $('#no').onclick=()=>hojaSesion(i, d);
+      $('#si').onclick=()=>{
+        const ni = $('#ti').value===aLocal(t.inicio) ? t.inicio : new Date($('#ti').value).getTime(), nf = $('#tf').value===aLocal(t.fin) ? t.fin : new Date($('#tf').value).getTime();
+        if(isNaN(ni)||isNaN(nf)){ $('#err').textContent='Indica las dos horas.'; return; }
+        if(nf<=ni){ $('#err').textContent='El final debe ser posterior al inicio.'; return; }
+        if(j>0 && ni<=d[j-1].inicio){ $('#err').textContent=`No puede empezar antes de que empiece el tramo anterior (${hora(d[j-1].inicio)}).`; return; }
+        if(j<d.length-1 && nf>=d[j+1].fin){ $('#err').textContent=`No puede terminar después de que termine el tramo siguiente (${hora(d[j+1].fin)}).`; return; }
+        if(nf>Date.now()){ $('#err').textContent='No puede terminar en el futuro.'; return; }
+        t.inicio=ni; t.fin=nf; t.modo=modo; t.apero=$('#ta').value;
+        if(j>0) d[j-1].fin=ni;
+        if(j<d.length-1) d[j+1].inicio=nf;
+        hojaSesion(i, d);
+      };
+      $('#div').onclick=()=>{
+        const h=new Date($('#dh').value).getTime(), na=$('#da').value;
+        if(isNaN(h)){ $('#err2').textContent='Indica la hora del cambio.'; return; }
+        if(h<=t.inicio || h>=t.fin){ $('#err2').textContent=`La hora debe estar entre ${hora(t.inicio)} y ${hora(t.fin)}.`; return; }
+        if(na===t.apero){ $('#err2').textContent='Elige un apero distinto del que ya lleva el tramo.'; return; }
+        d.splice(j+1,0,{...t, inicio:h, apero:na}); t.fin=h;
+        hojaSesion(i, d);
+      };
+  });
+}
+
+function hojaPrevia(i, d, borrar){
+  const ses = S.sesiones[i];
+  const cambios = S.mants.map(m=>{
+    const delta = aporte(m,d) - aporte(m,ses.tramos);
+    return {m, delta, antes:horasRestantes(m), despues:horasRestantes(m)-delta};
+  }).filter(x=>Math.abs(x.delta)>0.001);
+  const est = (r,m) => r<0 ? 'pasado' : r<umbralDe(m) ? 'inminente' : 'al día';
+  const lista = cambios.length ? cambios.map(x=>`<div class="cambio"><span>${x.m.nombre}<br><span class="s">${nombreMaq(x.m.maq)}</span></span><span style="text-align:right">${textoRestante(x.antes)}<br><span class="s">pasa a ${textoRestante(x.despues)}${est(x.antes,x.m)!==est(x.despues,x.m)?', '+est(x.despues,x.m):''}</span></span></div>`).join('') : '<p>No cambia ningún mantenimiento.</p>';
+  abrirHoja(`<h3>${borrar?'¿Borrar esta sesión?':'Revisa los cambios'}</h3><p>${borrar?'Se quitan sus horas de los mantenimientos que aún no se han hecho desde entonces.':'Así quedan los mantenimientos afectados. Los hechos después de esta sesión no cambian.'}</p>${lista}
+    <div class="acciones"><button id="no">Volver</button><button class="${borrar?'peligro':'ok'}" id="si">${borrar?'Borrar':'Guardar'}</button></div>`,()=>{
+      $('#no').onclick=()=>hojaSesion(i, borrar?undefined:d);
+      $('#si').onclick=()=>{
+        cambios.forEach(x=>{ if(x.m.reloj==='trabajo') x.m.acum=Math.max(0,x.m.acum+x.delta); });
+        if(!S.cambios) S.cambios=[];
+        S.cambios.push({fecha:Date.now(), tipo:borrar?'borrar-sesion':'editar-sesion', sesionInicio:ses.inicio, antes:ses.tramos, despues:d});
+        if(borrar) S.sesiones.splice(i,1);
+        else { ses.tramos=d; ses.inicio=d[0].inicio; ses.fin=d[d.length-1].fin; }
+        guardar(); cerrarHoja(); pintar(); toast(borrar?'Sesión borrada':'Sesión corregida');
+      };
+  });
+}
+
+/* ---------- combustible ---------- */
+const eur = n => n==null ? '' : n.toLocaleString('es-ES',{style:'currency',currency:'EUR'});
+const eurL = n => n==null ? '' : n.toLocaleString('es-ES',{minimumFractionDigits:3,maximumFractionDigits:3})+' €/L';
+const fecha = ms => new Date(ms).toLocaleDateString('es-ES',{day:'numeric',month:'short'})+', '+new Date(ms).toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'});
+
+function calcDeposito(){
+  const D=S.deposito, cap=D.capacidad;
+  const evs=[...D.movs.map(m=>({...m})),
+    ...S.repostajes.map((r,i)=>({r,i})).filter(x=>x.r.producto==='gasoil'&&x.r.origen==='dep').map(x=>({tipo:'salida',fecha:x.r.fecha,litros:x.r.litros,key:'r'+x.i}))
+  ].sort((a,b)=>a.fecha-b.fecha);
+  let stock=null, pm=null, pendiente=false, salidas=[], iniciado=false, ultimoAjuste=null, ultimoLleno=null;
+  const info={};
+  for(const e of evs){
+    if(e.tipo==='inicio'){ iniciado=true; pm=e.importe/e.litros; stock=cap; salidas=[]; ultimoLleno=e.fecha; }
+    else if(e.tipo==='compra'){
+      if(e.litros==null||e.importe==null){ pendiente=true; info[e.id]={pendiente:true}; if(e.lleno&&iniciado){ stock=cap; salidas=[]; ultimoLleno=e.fecha; } continue; }
+      if(!iniciado){ info[e.id]={}; continue; }
+      const base=Math.max(stock,0); pm=(base*pm+e.importe)/(base+e.litros); stock+=e.litros;
+      if(e.lleno){
+        const des=cap-stock, suma=salidas.reduce((s,x)=>s+x.litros,0);
+        const f = suma>0 ? Math.max(0,(suma-des)/suma) : 1;
+        salidas.forEach(x=>{ info[x.key].ajustados=x.litros*f; });
+        ultimoAjuste={fecha:e.fecha, litros:des, pct: suma>0 ? Math.abs(des)/suma*100 : 0};
+        info[e.id]={desajuste:des}; stock=cap; salidas=[]; ultimoLleno=e.fecha;
+      } else info[e.id]={};
+    }
+    else if(e.tipo==='salida'||e.tipo==='otro'){
+      const key = e.tipo==='salida' ? e.key : e.id;
+      info[key]={coste: pm!=null ? e.litros*pm : null, provisional:pendiente};
+      if(iniciado){ stock-=e.litros; salidas.push({key,litros:e.litros}); }
+    }
+  }
+  return {iniciado, stock, pm, pendiente, info, ultimoAjuste, ultimoLleno, cap};
+}
+
+function pintarComb(){
+  const C = calcDeposito();
+  const items = [
+    ...S.repostajes.map((r,i)=>({fecha:r.fecha, k:'r'+i, r})),
+    ...S.deposito.movs.map(m=>({fecha:m.fecha, k:m.id, m}))
+  ].sort((a,b)=>b.fecha-a.fecha);
+  const fila = it => {
+    const inf = C.info[it.k] || {};
+    if(it.r){
+      const r=it.r, t=tractor(r.tractor);
+      const tit = r.producto==='adblue' ? 'AdBlue, cooperativa' : (r.origen==='dep' ? 'Gasoil del depósito' : 'Gasoil, cooperativa');
+      let der = `${fmtH(r.litros)} L`, sub='';
+      if(r.origen==='dep'){
+        if(inf.ajustados!=null) der = `${fmtH(inf.ajustados)} L`, sub = `marcados ${fmtH(r.litros)} L`;
+        else if(inf.coste!=null) sub = `${inf.provisional?'≈ ':''}${eur(inf.coste)}`;
+      } else sub = eur(r.importe);
+      return `<div class="mov"><span class="fx"><span class="n">${tit}</span><br><span class="s">${t?t.nombre:''}, ${fecha(r.fecha)}</span></span><span class="der">${der}<span class="s">${sub}</span></span></div>`;
+    }
+    const m = it.m;
+    if(m.tipo==='inicio') return `<div class="mov"><span class="fx"><span class="n">Puesta en marcha del depósito</span><br><span class="s">${fecha(m.fecha)}</span><br><span class="tag ok">Lleno, ${fmtH(C.cap)} L</span></span><span class="der">${fmtH(m.litros)} L<span class="s">${eur(m.importe)}</span></span></div>`;
+    if(m.tipo==='otro') return `<div class="mov"><span class="fx"><span class="n">Salida del depósito</span><br><span class="s">${m.nota||'Otros usos'}, ${fecha(m.fecha)}</span></span><span class="der">${fmtH(m.litros)} L<span class="s">${inf.coste!=null?(inf.provisional?'≈ ':'')+eur(inf.coste):''}</span></span></div>`;
+    if(inf.pendiente) return `<button class="mov" data-comp="${m.id}"><span class="fx"><span class="n">Pedido de gasoil</span><br><span class="s">${fecha(m.fecha)}</span><br><span class="tag">Faltan datos, toca para completar</span>${m.lleno?' <span class="tag ok">Lleno</span>':''}</span><span class="der">${m.litros!=null?fmtH(m.litros)+' L':''}</span></button>`;
+    const des = inf.desajuste!=null ? `<br><span class="s">Desajuste ${inf.desajuste>=0?'+':''}${fmtH(inf.desajuste)} L</span>` : '';
+    return `<div class="mov"><span class="fx"><span class="n">Pedido de gasoil</span><br><span class="s">${fecha(m.fecha)}</span>${m.lleno?'<br><span class="tag ok">Lleno</span>':''}${des}</span><span class="der">${fmtH(m.litros)} L<span class="s">${eur(m.importe)}</span></span></div>`;
+  };
+  let dep;
+  if(!C.iniciado){
+    dep = `<section class="dep"><div class="tit">Depósito de la bajera</div><p class="s" style="margin:6px 0 10px">Ponlo en marcha el día que lo llenes entero: así la app sabrá cuánto hay.</p><button class="chip" id="bi" style="width:100%">Poner en marcha el depósito</button></section>`;
+  } else {
+    const st = Math.max(0, C.stock), pct = Math.min(100, st/C.cap*100);
+    const a = C.ultimoAjuste;
+    const desHtml = a ? `<div class="des ${a.pct>S.umbralDesajuste?'alerta':''}">Último llenado: desajuste de ${a.litros>=0?'+':''}${fmtH(a.litros)} L${a.pct?` (${fmtH(a.pct)} % de lo repostado)`:''}${a.pct>S.umbralDesajuste?'. Revisa si falta algún repostaje por apuntar.':''}</div>` : '';
+    dep = `<section class="dep" aria-label="Depósito de la bajera"><div class="tit">Depósito de la bajera</div><div class="big">≈ ${Math.round(st).toLocaleString('es-ES')} L</div><div class="barra" aria-hidden="true"><span style="width:${pct}%"></span></div><div class="s">De ${C.cap.toLocaleString('es-ES')} L. Precio medio ${C.pendiente?'provisional ':''}${eurL(C.pm)}</div>${desHtml}</section>`;
+  }
+  $('#vista').innerHTML = `${dep}
+    <div class="acc3">
+      <button class="chip" id="brp">${I.gas}Repostar</button>
+      <button class="chip" id="bpd">Pedido a domicilio</button>
+      ${C.iniciado?`<button class="chip" id="bot">Otra salida del depósito</button>`:''}
+    </div>
+    <section class="hist"><h2>Historial</h2><div class="lista">${items.length?items.map(fila).join(''):'<div class="vacio" style="padding:16px">Todavía no hay repostajes. Empieza con el botón Repostar.</div>'}</div></section>`;
+  if($('#bi')) $('#bi').onclick=hojaInicioDeposito;
+  $('#brp').onclick=hojaRepostar;
+  $('#bpd').onclick=()=> C.iniciado ? hojaPedido() : hojaInicioDeposito();
+  if($('#bot')) $('#bot').onclick=hojaOtraSalida;
+  document.querySelectorAll('[data-comp]').forEach(b=>b.onclick=()=>hojaCompletar(b.dataset.comp));
+}
+
+function leerNum(id){ const v=$('#'+id).value; return v==='' ? null : parseFloat(v); }
+
+function hojaInicioDeposito(){
+  abrirHoja(`<h3>Poner en marcha el depósito</h3><p>Usa el día que el camión lo deje lleno. Lo que ya había dentro se valora al precio de esta compra.</p>
+    <label class="f" for="cap">Capacidad del depósito (L)</label>${campoNumero('cap', S.deposito.capacidad)}
+    <label class="f" for="l">Litros que ha traído el camión</label>${campoNumero('l')}
+    <label class="f" for="p">Importe total (€)</label>${campoNumero('p',undefined,'step="0.01"')}
+    <label class="f" for="fd">Fecha</label><input type="datetime-local" id="fd" value="${aLocal(Date.now())}">
+    <div class="err" id="err"></div>
+    <div class="acciones"><button id="no">Cancelar</button><button class="ok" id="si">Poner en marcha</button></div>`,()=>{
+      enlazarCamaras();
+      $('#no').onclick=()=>cerrarHoja();
+      $('#si').onclick=()=>{
+        const cap=leerNum('cap'), l=leerNum('l'), p=leerNum('p'), f=new Date($('#fd').value).getTime();
+        if(!cap||cap<=0){ $('#err').textContent='Indica la capacidad del depósito.'; return; }
+        if(!l||l<=0){ $('#err').textContent='Indica los litros que ha traído el camión.'; return; }
+        if(l>cap){ $('#err').textContent='Los litros no pueden superar la capacidad.'; return; }
+        if(p==null||p<=0){ $('#err').textContent='Indica el importe total.'; return; }
+        if(isNaN(f)){ $('#err').textContent='Indica la fecha.'; return; }
+        S.deposito.capacidad=cap;
+        S.deposito.movs.push({id:'d'+Date.now(), tipo:'inicio', fecha:f, litros:l, importe:p});
+        guardar(); cerrarHoja(); pintar(); toast('Depósito en marcha');
+      };
+  });
+}
+
+function hojaPedido(){
+  abrirHoja(`<h3>Pedido de gasoil a domicilio</h3><p>Si ahora no tienes los litros o el importe, déjalos en blanco y los completas cuando tengas el albarán.</p>
+    <label class="f" for="fd">Fecha de entrega</label><input type="datetime-local" id="fd" value="${aLocal(Date.now())}">
+    <label class="f" for="l">Litros</label>${campoNumero('l')}
+    <label class="f" for="p">Importe total (€)</label>${campoNumero('p',undefined,'step="0.01"')}
+    <label class="chk"><input type="checkbox" id="ll"> Ha quedado lleno (${S.deposito.capacidad.toLocaleString('es-ES')} L)</label>
+    <div class="err" id="err"></div>
+    <div class="acciones"><button id="no">Cancelar</button><button class="ok" id="si">Guardar</button></div>`,()=>{
+      enlazarCamaras();
+      $('#no').onclick=()=>cerrarHoja();
+      $('#si').onclick=()=>{
+        const l=leerNum('l'), p=leerNum('p'), f=new Date($('#fd').value).getTime();
+        if(isNaN(f)){ $('#err').textContent='Indica la fecha.'; return; }
+        if(l!=null && l<=0){ $('#err').textContent='Los litros deben ser más de 0.'; return; }
+        if(p!=null && p<0){ $('#err').textContent='El importe no puede ser negativo.'; return; }
+        S.deposito.movs.push({id:'d'+Date.now(), tipo:'compra', fecha:f, litros:l, importe:p, lleno:$('#ll').checked});
+        guardar(); cerrarHoja(); pintar(); toast(l==null||p==null ? 'Pedido guardado, faltan datos' : 'Pedido guardado');
+      };
+  });
+}
+
+function hojaCompletar(id){
+  const m = S.deposito.movs.find(x=>x.id===id);
+  abrirHoja(`<h3>Completar pedido</h3><p>Pedido del ${fecha(m.fecha)}. Al guardar se recalculan el precio medio y los costes.</p>
+    <label class="f" for="l">Litros</label>${campoNumero('l', m.litros??undefined)}
+    <label class="f" for="p">Importe total (€)</label>${campoNumero('p', m.importe??undefined,'step="0.01"')}
+    <label class="chk"><input type="checkbox" id="ll" ${m.lleno?'checked':''}> Quedó lleno (${S.deposito.capacidad.toLocaleString('es-ES')} L)</label>
+    <div class="err" id="err"></div>
+    <div class="acciones"><button id="no">Cancelar</button><button class="ok" id="si">Guardar</button></div>`,()=>{
+      enlazarCamaras();
+      $('#no').onclick=()=>cerrarHoja();
+      $('#si').onclick=()=>{
+        const l=leerNum('l'), p=leerNum('p');
+        if(l==null||l<=0){ $('#err').textContent='Indica los litros.'; return; }
+        if(p==null||p<0){ $('#err').textContent='Indica el importe.'; return; }
+        m.litros=l; m.importe=p; m.lleno=$('#ll').checked;
+        guardar(); cerrarHoja(); pintar(); toast('Pedido completado');
+      };
+  });
+}
+
+function hojaOtraSalida(){
+  abrirHoja(`<h3>Otra salida del depósito</h3><p>Para gasoil del depósito que no va a un tractor de la app, como la pickup.</p>
+    <label class="f" for="l">Litros</label>${campoNumero('l')}
+    <label class="f" for="nt">Para qué</label><input id="nt" placeholder="Pickup">
+    <div class="err" id="err"></div>
+    <div class="acciones"><button id="no">Cancelar</button><button class="ok" id="si">Guardar</button></div>`,()=>{
+      enlazarCamaras();
+      $('#no').onclick=()=>cerrarHoja();
+      $('#si').onclick=()=>{
+        const l=leerNum('l');
+        if(l==null||l<=0){ $('#err').textContent='Indica los litros.'; return; }
+        S.deposito.movs.push({id:'d'+Date.now(), tipo:'otro', fecha:Date.now(), litros:l, nota:$('#nt').value.trim()});
+        guardar(); cerrarHoja(); pintar(); toast('Salida guardada');
+      };
+  });
+}
+
+/* ---------- mantenimientos ---------- */
+let filtroEstado='todos', filtroMaq='todas';
+const nombreMaq = id => (tractor(id)||apero(id)||{}).nombre || '';
+function textoRestante(r){ return r<0 ? `pasado ${fmtH(-r)} h` : `faltan ${fmtH(r)} h`; }
+
+function pintarMant(){
+  const enMaq = m => filtroMaq==='todas' || m.maq===filtroMaq;
+  const cuenta = e => S.mants.filter(m=>enMaq(m) && estadoMant(m)===e).length;
+  const filas = S.mants.filter(enMaq).map(m=>({m, r:horasRestantes(m), e:estadoMant(m)}))
+    .filter(x=> filtroEstado==='todos' || (filtroEstado==='pasados'&&x.e==='r') || (filtroEstado==='inminentes'&&x.e==='y'))
+    .sort((a,b)=>a.r-b.r);
+  const maqs = [...S.tractores, ...S.aperos];
+  $('#vista').innerHTML = `
+    <div class="filtros">
+      <div class="seg" id="fe">
+        <button data-v="todos" class="${filtroEstado==='todos'?'sel':''}">Todos</button>
+        <button data-v="pasados" class="${filtroEstado==='pasados'?'sel':''}"><span class="dot r"></span>Pasados (${cuenta('r')})</button>
+        <button data-v="inminentes" class="${filtroEstado==='inminentes'?'sel':''}"><span class="dot y"></span>Inminentes (${cuenta('y')})</button>
+      </div>
+      <select id="fm" aria-label="Filtrar por máquina"><option value="todas">Todas las máquinas</option>${maqs.map(x=>`<option value="${x.id}" ${x.id===filtroMaq?'selected':''}>${x.nombre}</option>`).join('')}</select>
+    </div>
+    <p class="pista">Desliza una línea a la derecha para marcarla como hecha, o tócala para ver el detalle.</p>
+    <div class="lista">${filas.length ? filas.map(({m,r,e})=>`
+      <div class="fwrap"><div class="fondo" aria-hidden="true">Hecho</div>
+        <div class="fila" data-id="${m.id}" tabindex="0" role="button" aria-label="${m.nombre}, ${nombreMaq(m.maq)}, ${textoRestante(r)}">
+          <span class="dot ${e||'n'}"></span>
+          <span class="fx"><span class="n">${m.nombre}</span><span class="s">${nombreMaq(m.maq)}, cada ${m.intervalo} h</span></span>
+          <span class="fq"><span class="rel" title="${m.reloj==='motor'?'Horas de motor':'Horas de trabajo'}">${m.reloj==='motor'?I.motor:I.reloj}</span>${textoRestante(r)}</span>
+        </div></div>`).join('') : '<div class="vacio" style="padding:16px">No hay mantenimientos con este filtro.</div>'}</div>`;
+  $('#fe').querySelectorAll('button').forEach(b=>b.onclick=()=>{ filtroEstado=b.dataset.v; pintarMant(); });
+  $('#fm').onchange=e=>{ filtroMaq=e.target.value; pintarMant(); };
+  document.querySelectorAll('.fila').forEach(enlazarDeslizar);
+}
+
+function enlazarDeslizar(el){
+  let x0=null, dx=0, movido=false; const id=el.dataset.id;
+  el.addEventListener('pointerdown',e=>{ x0=e.clientX; dx=0; movido=false; el.setPointerCapture(e.pointerId); el.style.transition='none'; });
+  el.addEventListener('pointermove',e=>{ if(x0===null) return; dx=Math.max(0,e.clientX-x0); if(dx>6) movido=true; el.style.transform=`translateX(${dx}px)`; });
+  el.addEventListener('pointerup',()=>{
+    if(x0===null) return; x0=null;
+    el.style.transition='transform .2s'; const w=el.offsetWidth; el.style.transform='translateX(0)';
+    if(dx > w*0.35) hojaHecho(id); else if(!movido) hojaDetalle(id);
+  });
+  el.addEventListener('pointercancel',()=>{ x0=null; el.style.transform='translateX(0)'; });
+  el.addEventListener('keydown',e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); hojaDetalle(id); } });
+}
+
+function hojaDetalle(id){
+  const m = S.mants.find(x=>x.id===id), r = horasRestantes(m), e = estadoMant(m);
+  const ultimo = m.reloj==='motor' ? `A las ${fmtH(m.ultima)} h del horómetro` : `Hace ${fmtH(m.intervalo - r)} h de trabajo`;
+  abrirHoja(`<h3>${m.nombre}</h3>
+    <dl class="det">
+      <dt>Máquina</dt><dd>${nombreMaq(m.maq)}</dd>
+      <dt>Cuenta por</dt><dd>${m.reloj==='motor'?'Horas de motor (horómetro)':'Horas de trabajo (app)'}</dd>
+      <dt>Cada</dt><dd>${m.intervalo} h</dd>
+      <dt>Último</dt><dd>${ultimo}</dd>
+      <dt>Estado</dt><dd>${e==='r'?'Pasado':e==='y'?'Inminente':'Al día'}, ${textoRestante(r)}</dd>
+    </dl>
+    <div class="acciones"><button id="no">Cerrar</button><button class="ok" id="si">Marcar como hecho</button></div>
+    <div class="acciones"><button id="ed">Editar o borrar</button></div>`,()=>{
+      $('#ed').onclick=()=>hojaEditarMant(id);
+      $('#no').onclick=()=>cerrarHoja();
+      $('#si').onclick=()=>hojaHecho(id);
+  });
+}
+
+function hojaHecho(id){
+  const m = S.mants.find(x=>x.id===id);
+  const r = horasRestantes(m);
+  if(m.reloj==='motor'){
+    const t = tractor(m.maq);
+    abrirHoja(`<h3>${m.nombre} hecho</h3><p>${t.nombre}. Indica el horómetro cuando lo hiciste. Si fue ahora, deja la última lectura.</p>
+      <label class="f" for="h">Horas del horómetro</label>${campoNumero('h', t.horometro)}
+      <div class="err" id="err"></div>
+      <div class="acciones"><button id="no">Cancelar</button><button class="ok" id="si">Guardar</button></div>`,()=>{
+        enlazarCamaras();
+        $('#no').onclick=()=>cerrarHoja();
+        $('#h').oninput=()=>{$('#err').textContent='';};
+        $('#si').onclick=()=>{
+          const v = parseFloat($('#h').value);
+          if(isNaN(v)){ $('#err').textContent='Escribe las horas del horómetro.'; return; }
+          if(v > t.horometro){ $('#err').textContent=`Es más que la última lectura (${fmtH(t.horometro)} h). Actualiza antes el horómetro desde Inicio.`; return; }
+          if(v < m.ultima){ $('#err').textContent=`Es menos que la vez anterior (${fmtH(m.ultima)} h).`; return; }
+          S.hechos.push({fecha:Date.now(), mant:m.id, reloj:'motor', horas:v, tocaba:m.ultima+m.intervalo});
+          m.ultima = v; guardar(); cerrarHoja(); pintar(); toast(`${m.nombre}: marcado como hecho`);
+        };
+    });
+  } else {
+    const acumAhora = m.intervalo - r;
+    abrirHoja(`<h3>${m.nombre} hecho</h3><p>${nombreMaq(m.maq)}. Si lo acabas de hacer, deja 0. Si fue antes, indica cuántas horas de trabajo han pasado desde entonces.</p>
+      <label class="f" for="h">Horas de trabajo desde que lo hiciste</label>${campoNumero('h', 0)}
+      <div class="err" id="err"></div>
+      <div class="acciones"><button id="no">Cancelar</button><button class="ok" id="si">Guardar</button></div>`,()=>{
+        enlazarCamaras();
+        $('#no').onclick=()=>cerrarHoja();
+        $('#h').oninput=()=>{$('#err').textContent='';};
+        $('#si').onclick=()=>{
+          const v = parseFloat($('#h').value);
+          if(isNaN(v) || v<0){ $('#err').textContent='Escribe 0 o más horas.'; return; }
+          if(v > acumAhora){ $('#err').textContent=`Desde la vez anterior solo hay ${fmtH(acumAhora)} h de trabajo registradas.`; return; }
+          S.hechos.push({fecha:Date.now(), mant:m.id, reloj:'trabajo', horasAlHacerlo:acumAhora - v, intervalo:m.intervalo});
+          m.acum = v; m.desde = Date.now(); guardar(); cerrarHoja(); pintar(); toast(`${m.nombre}: marcado como hecho`);
+        };
+    });
+  }
+}
+
+function pintar(){
+  const d = new Date();
+  $('#fecha').textContent = d.toLocaleDateString('es-ES',{weekday:'long',day:'numeric',month:'long'}).replace(/^./,c=>c.toUpperCase());
+  pintarNav();
+  if(seccion==='inicio') pintarInicio();
+  else if(seccion==='mant') pintarMant();
+  else if(seccion==='gasoil') pintarComb();
+  else if(seccion==='dias') pintarDias();
+  else if(seccion==='maquinas') pintarMaquinas();
+  else {
+    const nom = SECCIONES.find(s=>s[0]===seccion)[1];
+    $('#vista').innerHTML = `<div class="prox"><h2 style="font-weight:500;color:var(--text)">${nom}</h2><p>Esta sección la construiremos en los siguientes pasos.</p></div>`;
+  }
+}
+
+function tic(){
+  if(seccion!=='inicio') return;
+  const r = $('#reloj'); if(!r) return;
+  if(S.sesion){
+    const ms = Date.now()-S.sesion.inicio;
+    r.textContent = dur(ms);
+    const l = $('#largo');
+    if(ms/H >= S.umbralLarga){ l.style.display='block'; l.textContent=`La sesión lleva más de ${S.umbralLarga} h abierta. ¿Se te olvidó pararla?`; }
+    else l.style.display='none';
+  } else r.textContent='00:00:00';
+}
+setInterval(tic, 1000);
+
+let estadosPrevios = null;
+function comprobarAvisos(){
+  const t = tractor(S.sel.tractor), a = apero(S.sel.apero);
+  if(!t) return;
+  const ahora = {};
+  S.mants.filter(m=>m.maq===t.id || (a && m.maq===a.id)).forEach(m=>{ ahora[m.id]=estadoMant(m); });
+  let cambio = false;
+  if(estadosPrevios){
+    for(const id in ahora){
+      if(ahora[id]!==estadosPrevios[id]){
+        cambio = true;
+        const m = S.mants.find(x=>x.id===id);
+        if(ahora[id]==='r') toast(`${m.nombre}: ya toca`);
+        else if(ahora[id]==='y') toast(`${m.nombre}: quedan menos de ${fmtH(umbralDe(m))} h`);
+      }
+    }
+  }
+  estadosPrevios = ahora;
+  if(cambio && seccion==='inicio' && !hojaAbierta) pintarInicio();
+}
+setInterval(comprobarAvisos, 30000);
+document.addEventListener('visibilitychange', ()=>{
+  if(document.visibilityState==='visible'){ if(!hojaAbierta) pintar(); comprobarAvisos(); }
+});
+setTimeout(comprobarAvisos, 500);
+
+$('#btnAtras').onclick=()=>{ if(hojaAbierta) cerrarHoja(); else if(seccion!=='inicio') history.back(); };
+/* ---------- sincronización con Drive ---------- */
+const CFG = 'mant-app-cfg', SYN = 'mant-app-sync';
+let cfg = {url:'', clave:''}, sync = {pendiente:false, ultimo:null, error:null, cambios:0};
+try{ cfg = Object.assign(cfg, JSON.parse(localStorage.getItem(CFG))||{}); }catch(e){}
+try{ sync = Object.assign(sync, JSON.parse(localStorage.getItem(SYN))||{}); }catch(e){}
+function guardarSync(){ try{ localStorage.setItem(SYN, JSON.stringify(sync)); }catch(e){} }
+let tSubir=null, subiendo=false;
+function marcarPendiente(){
+  sync.pendiente = true; sync.cambios++; guardarSync(); pintarSync();
+  clearTimeout(tSubir); tSubir = setTimeout(subir, 1500);
+}
+async function llamar(cuerpo){
+  const r = await fetch(cfg.url, {method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body:JSON.stringify({...cuerpo, clave:cfg.clave})});
+  const j = await r.json();
+  if(!j.ok) throw new Error(j.error || 'Error desconocido');
+  return j;
+}
+async function subir(){
+  if(!cfg.url || !cfg.clave || !sync.pendiente){ pintarSync(); return; }
+  if(!navigator.onLine){ pintarSync(); return; }
+  if(subiendo) return;
+  subiendo = true; pintarSync();
+  const n = sync.cambios;
+  try{
+    await llamar({accion:'guardar', estado:S});
+    sync.ultimo = Date.now(); sync.error = null;
+    if(sync.cambios===n) sync.pendiente = false;
+  }catch(e){ sync.error = String(e.message||e); }
+  subiendo = false; guardarSync(); pintarSync();
+  if(sync.pendiente && !sync.error) setTimeout(subir, 500);
+}
+function pintarSync(){
+  const b = $('#sync'); if(!b) return;
+  let t, ok=false;
+  if(!cfg.url || !cfg.clave) t='Sin conectar a Drive';
+  else if(subiendo) t='Subiendo\u2026';
+  else if(sync.pendiente && !navigator.onLine) t='Sin cobertura, pendiente de subir';
+  else if(sync.pendiente && sync.error) t='Error al subir, toca para ver';
+  else if(sync.pendiente) t='Pendiente de subir';
+  else { t='Todo subido'; ok=true; }
+  b.textContent = t; b.classList.toggle('ok', ok);
+}
+window.addEventListener('online', ()=>{ pintarSync(); subir(); });
+window.addEventListener('offline', pintarSync);
+document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='visible' && sync.pendiente) subir(); });
+
+function hojaAjustes(){
+  const est = sync.error ? `\u00daltimo error: ${sync.error}` : sync.ultimo ? `\u00daltima subida: ${fecha(sync.ultimo)}` : 'Todav\u00eda no se ha subido nada.';
+  abrirHoja(`<h3>Ajustes</h3>
+    <p class="peq" style="margin-top:8px">Conexi\u00f3n con la hoja de Drive</p>
+    <label class="f" for="cu">Direcci\u00f3n del puente</label><input id="cu" value="${cfg.url.replace(/"/g,'&quot;')}" placeholder="https://script.google.com/macros/s/.../exec" autocomplete="off">
+    <label class="f" for="ck">Clave</label><input id="ck" value="${cfg.clave.replace(/"/g,'&quot;')}" autocomplete="off">
+    <p class="nota">${est}</p>
+    <div class="err" id="err"></div>
+    <div class="acciones"><button id="gc">Guardar conexi\u00f3n</button><button class="ok" id="sb">Subir ahora</button></div>
+    <div class="acciones"><button id="rc">Recuperar datos desde Drive</button></div>
+    <hr class="sep"><p class="peq">Avisos</p>
+    <label class="f" for="ua">Amarillo cuando falten menos de (h)</label><p class="nota" style="margin:0 0 4px">O menos de una cuarta parte del intervalo, si es m\u00e1s corto.</p><input id="ua" type="number" inputmode="decimal" value="${S.umbralAmarillo}">
+    <label class="f" for="ul">Aviso de sesi\u00f3n abierta a partir de (h)</label><input id="ul" type="number" inputmode="decimal" value="${S.umbralLarga}">
+    <label class="f" for="ud">Alerta de desajuste del dep\u00f3sito a partir de (%)</label><input id="ud" type="number" inputmode="decimal" value="${S.umbralDesajuste}">
+    <div class="err" id="err2"></div>
+    <div class="acciones"><button id="no">Cerrar</button><button class="ok" id="gu">Guardar avisos</button></div>`,()=>{
+      const leerCfg = ()=>{ cfg.url=$('#cu').value.trim(); cfg.clave=$('#ck').value.trim(); try{ localStorage.setItem(CFG, JSON.stringify(cfg)); }catch(e){} };
+      $('#no').onclick=()=>cerrarHoja();
+      $('#gc').onclick=()=>{
+        leerCfg();
+        if(!/^https:\/\/script\.google\.com\/macros\/s\/.+\/exec$/.test(cfg.url)){ $('#err').textContent='La direcci\u00f3n debe empezar por https://script.google.com/macros/s/ y acabar en /exec.'; return; }
+        if(!cfg.clave){ $('#err').textContent='Pega la clave del puente.'; return; }
+        sync.pendiente = true; sync.cambios++; sync.error=null; guardarSync(); cerrarHoja(); subir(); toast('Conexi\u00f3n guardada');
+      };
+      $('#sb').onclick=()=>{ leerCfg(); sync.pendiente=true; sync.cambios++; sync.error=null; guardarSync(); cerrarHoja(); subir(); };
+      $('#rc').onclick=()=>{
+        leerCfg();
+        if(!cfg.url||!cfg.clave){ $('#err').textContent='Primero guarda la direcci\u00f3n y la clave.'; return; }
+        abrirHoja(`<h3>\u00bfRecuperar desde Drive?</h3><p>Los datos de este m\u00f3vil se sustituyen por los que hay guardados en la hoja. Usa esto en un m\u00f3vil nuevo o si se han borrado los datos.</p><div class="err" id="err3"></div><div class="acciones"><button id="no2">Cancelar</button><button class="peligro" id="si2">Recuperar</button></div>`,()=>{
+          $('#no2').onclick=()=>cerrarHoja();
+          $('#si2').onclick=async()=>{
+            $('#si2').disabled=true; $('#err3').textContent='Descargando\u2026';
+            try{
+              const j = await llamar({accion:'leer'});
+              if(!j.estado){ $('#err3').textContent='La hoja todav\u00eda no tiene datos guardados.'; $('#si2').disabled=false; return; }
+              S = j.estado;
+              try{ localStorage.setItem(CLAVE, JSON.stringify(S)); }catch(e){}
+              sync.pendiente=false; sync.error=null; sync.ultimo=Date.now(); guardarSync();
+              cerrarHoja(); seccion='inicio'; pintar(); pintarSync(); toast('Datos recuperados');
+            }catch(e){ $('#err3').textContent='No se ha podido: '+(e.message||e); $('#si2').disabled=false; }
+          };
+        });
+      };
+      $('#gu').onclick=()=>{
+        const a=parseFloat($('#ua').value), l=parseFloat($('#ul').value), d=parseFloat($('#ud').value);
+        if(!(a>0)||!(l>0)||!(d>0)){ $('#err2').textContent='Los tres valores deben ser mayores que 0.'; return; }
+        S.umbralAmarillo=a; S.umbralLarga=l; S.umbralDesajuste=d; guardar(); cerrarHoja(); pintar(); toast('Avisos guardados');
+      };
+  });
+}
+$('#btnAjustes').onclick=hojaAjustes;
+$('#sync').onclick=hojaAjustes;
+
+window.addEventListener('popstate', e=>{
+  if(ignorarPop){ ignorarPop=false; return; }
+  if(hojaAbierta){ cerrarHoja(true); return; }
+  const s = (e.state && e.state.s) || 'inicio';
+  if(s==='dias' && seccion==='dias' && diasModo==='dia'){ diasModo='cal'; pintar(); return; }
+  if(s==='maquinas' && seccion==='maquinas' && maqFicha){ maqFicha=null; pintar(); return; }
+  if(s!==seccion){ seccion=s; if(s!=='dias') diasModo='cal'; pintar(); }
+});
+history.replaceState({s:'inicio'},'');
+pintar();
+pintarSync();
+if(navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(()=>{});
+if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
+if(sync.pendiente) setTimeout(subir, 1500);
+</script>
+</body>
+</html>
