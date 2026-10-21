@@ -228,12 +228,32 @@ button.mov{cursor:pointer}
 .ventana{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--text2);margin:4px 2px 10px}
 .ventana button{width:40px;height:40px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--text);font-size:20px;cursor:pointer}
 .ventana b{color:var(--text);font-weight:500;min-width:56px;text-align:center}
+.topder{display:flex;align-items:center;gap:8px}
+.libreta{position:relative;width:38px;height:30px;border-radius:999px;border:1px solid var(--line);background:var(--card);color:var(--campo);display:grid;place-items:center;cursor:pointer;padding:0}
+.libreta svg{width:18px;height:18px}
+.libreta .cnt{position:absolute;top:-6px;right:-6px;margin:0;min-width:18px;height:18px;padding:0 4px;border-radius:999px;background:var(--tierra);color:var(--tierra-on);font-size:11px;font-weight:700;display:grid;place-items:center}
+.libreta:focus-visible{outline:3px solid var(--campo);outline-offset:2px}
+.hoja textarea,.redactar textarea{width:100%;font:inherit;font-size:16px;padding:11px 12px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--text);resize:vertical;line-height:1.4}
+.det dd.txt,.detalles{white-space:pre-line}
+.detalles{background:var(--campo-bg);border-radius:12px;padding:10px 12px;margin:6px 0 4px;font-size:15px}
+.blk.nose{background:var(--line);color:var(--text)}
+.tramo .bar.nose{background:var(--text2)}
+.notas{display:flex;flex-direction:column;gap:8px}
+.burbuja{align-self:flex-end;max-width:88%;background:var(--campo-bg);color:var(--text);border:0;border-radius:16px 16px 4px 16px;padding:10px 12px;text-align:left;font:inherit;cursor:pointer;white-space:pre-line}
+.burbuja.hecha{background:var(--card);border:1px solid var(--line);color:var(--text2)}
+.burbuja .meta{display:block;font-size:12px;color:var(--text2);margin-top:6px;white-space:normal}
+.redactar{position:sticky;bottom:72px;background:var(--bg);padding:10px 0 4px;margin-top:12px}
+.redactar .fila2{display:flex;gap:8px;align-items:flex-end}
+.redactar textarea{flex:1;min-height:48px}
+.redactar button{flex:none;padding:13px 16px;border-radius:12px;border:0;background:var(--campo);color:var(--campo-on);font:inherit;font-weight:500;cursor:pointer}
+.novedades{margin:8px 0 4px;padding-left:20px}
+.novedades li{margin:0 0 8px}
 @media (prefers-reduced-motion: reduce){*{transition:none!important}}
 </style>
 </head>
 <body>
 <div class="app">
-  <div class="top"><span id="fecha"></span><button class="badge" id="sync" type="button">Sin conectar</button></div>
+  <div class="top"><span id="fecha"></span><span class="topder"><button class="libreta" id="btnNotas" type="button" aria-label="Notas de uso"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h11a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H6z"/><path d="M6 3v18M4 7h4M4 12h4M4 17h4M10 8h5M10 12h5"/></svg></button><button class="badge" id="sync" type="button">Sin conectar</button></span></div>
   <main id="vista"></main>
 </div>
 
@@ -274,6 +294,7 @@ const SECCIONES = [
 
 const H = 3600000;
 const CLAVE = 'mant-app-v1';
+const VERSION_APP = '1.2.0';
 
 function estadoInicial(){
   return {
@@ -288,6 +309,7 @@ function estadoInicial(){
 let S;
 try{ S = JSON.parse(localStorage.getItem(CLAVE)) || estadoInicial(); }catch(e){ S = estadoInicial(); }
 function guardar(){ try{ localStorage.setItem(CLAVE, JSON.stringify(S)); }catch(e){} if(typeof marcarPendiente==='function') marcarPendiente(); }
+function migrar(){
 if(!S.hechos) S.hechos = [];
 if(!S.deposito) S.deposito = {capacidad:2000, movs:[]};
 if(S.umbralDesajuste==null) S.umbralDesajuste = 5;
@@ -297,8 +319,12 @@ if(S.ventanaSalir==null) S.ventanaSalir = 10;
 if(S.diasAmarillo==null) S.diasAmarillo = 30;
 if(!S.rutinaDia) S.rutinaDia = {};
 if(!S.averias) S.averias = [];
-S.mants.forEach(m=>{ if(!m.quien) m.quien='yo'; if(m.fecha==null) m.fecha=Date.now(); if(m.meses===undefined) m.meses=null; });
+S.mants.forEach(m=>{ if(!m.quien) m.quien='yo'; if(m.fecha==null) m.fecha=Date.now(); if(m.meses===undefined) m.meses=null; if(m.detalles==null) m.detalles=''; });
+if(!S.notas) S.notas = [];
+if(S.notaSig==null) S.notaSig = 1;
 try{ localStorage.setItem(CLAVE, JSON.stringify(S)); }catch(e){}
+}
+migrar();
 
 const $ = s => document.querySelector(s);
 const tractor = id => S.tractores.find(t=>t.id===id);
@@ -311,15 +337,19 @@ function toast(t){ const el=$('#toast'); el.textContent=t; el.classList.add('on'
 function cuentaEnTramo(m, tramo){
   if(m.reloj!=='trabajo') return false;
   const ap = apero(tramo.apero);
+  /* modo 'nose': horas igualadas con "No lo sé"; solo cuenta lo que vale igual en carretera y en campo */
   if(m.maq===tramo.tractor){
     if(m.cuenta==='siempre') return true;
     if(m.cuenta==='campo') return tramo.modo==='campo';
-    if(m.cuenta==='alza') return tramo.modo==='campo' && ap && ap.tipo==='suspendido';
+    if(m.cuenta==='alza') return tramo.modo==='campo' && !!ap && ap.tipo==='suspendido';
+    if(m.cuenta==='arrastrado') return !!ap && ap.tipo==='arrastrado';
+    if(m.cuenta==='carretera') return tramo.modo==='carretera';
     return false;
   }
   if(m.maq===tramo.apero){
     if(m.cuenta==='siempre') return ap.tipo==='arrastrado' || tramo.modo==='campo';
     if(m.cuenta==='campo') return tramo.modo==='campo';
+    if(m.cuenta==='carretera') return tramo.modo==='carretera';
   }
   return false;
 }
@@ -439,10 +469,7 @@ function hojaTractor(){
     $('#hoja').querySelectorAll('.opc').forEach(b=>b.onclick=()=>{
       S.sel.tractor=b.dataset.id;
       const ap = apero(S.sel.apero);
-      if(!ap || !esCompat(ap, S.sel.tractor)){
-        const c = S.aperos.find(a=>esCompat(a, S.sel.tractor));
-        S.sel.apero = c ? c.id : null;
-      }
+      if(ap && !esCompat(ap, S.sel.tractor)) S.sel.apero = null;
       guardar(); cerrarHoja(); pintar();
     });
   });
@@ -452,13 +479,26 @@ function hojaApero(){
   const lista = S.aperos.filter(a=>esCompat(a, S.sel.tractor));
   const titulo = S.sesion ? '¿A qué apero cambias?' : 'Elige apero';
   const ops = lista.map(a=>`<button class="opc ${a.id===S.sel.apero?'sel':''}" data-id="${a.id}"><span class="ico a">${I.apero}</span><span><span class="n">${a.nombre}</span><br><span class="s">${a.tipo==='suspendido'?'Suspendido':'Arrastrado'}</span></span></button>`).join('');
-  abrirHoja(`<h3>${titulo}</h3><p>Solo aparecen los compatibles con el ${tractor(S.sel.tractor).nombre}.</p>${ops}`, ()=>{
+  const actual = apero(S.sel.apero);
+  abrirHoja(`<h3>${titulo}</h3><p>${lista.length?`Solo aparecen los compatibles con el ${tractor(S.sel.tractor).nombre}.`:'Todavía no hay aperos. Dalos de alta en Máquinas.'}</p>${ops}
+    ${actual?`<div class="acciones"><button class="peligro" id="qa">Quitar apero</button></div><p class="nota">Sin apero, solo cuentan las horas del tractor.</p>`:''}`, ()=>{
+    if($('#qa')) $('#qa').onclick=()=>{
+      if(!S.sesion){ S.sel.apero=null; guardar(); cerrarHoja(); pintar(); toast(`${actual.nombre} quitado`); return; }
+      abrirHoja(`<h3>Quitar apero</h3><p>Se cierran las horas del ${esc(actual.nombre)} ahora. Las horas del tractor siguen corriendo.</p><div class="acciones"><button id="no">Cancelar</button><button class="peligro" id="si">Quitar</button></div>`,()=>{
+        $('#no').onclick=()=>cerrarHoja();
+        $('#si').onclick=()=>{
+          const ahora=Date.now(), modo=S.sesion.tramos[S.sesion.tramos.length-1].modo;
+          cerrarTramo(ahora); S.sel.apero=null; abrirTramo(modo, ahora);
+          guardar(); cerrarHoja(); pintar(); toast(`${actual.nombre} quitado`);
+        };
+      });
+    };
     $('#hoja').querySelectorAll('.opc').forEach(b=>b.onclick=()=>{
       const nuevo = b.dataset.id;
       if(nuevo===S.sel.apero){ cerrarHoja(); return; }
       if(!S.sesion){ S.sel.apero=nuevo; guardar(); cerrarHoja(); pintar(); return; }
       const viejo = apero(S.sel.apero), nu = apero(nuevo);
-      abrirHoja(`<h3>Cambiar de apero</h3><p>Se cierran las horas del ${viejo.nombre} y empiezan las del ${nu.nombre} ahora. Las horas del tractor siguen corriendo.</p><div class="acciones"><button id="no">Cancelar</button><button class="ok" id="si">Cambiar</button></div>`,()=>{
+      abrirHoja(`<h3>Cambiar de apero</h3><p>${viejo?`Se cierran las horas del ${viejo.nombre} y empiezan`:'Empiezan'} las del ${nu.nombre} ahora. Las horas del tractor siguen corriendo.</p><div class="acciones"><button id="no">Cancelar</button><button class="ok" id="si">Cambiar</button></div>`,()=>{
         $('#no').onclick=()=>cerrarHoja();
         $('#si').onclick=()=>{
           const ahora=Date.now(), modo=S.sesion.tramos[S.sesion.tramos.length-1].modo;
@@ -525,10 +565,14 @@ function hojaHorometro(){
         if(isNaN(v)){ $('#err').textContent='Escribe las horas del horómetro.'; return; }
         const aplicar = ()=>{
           const antes = S.mants.filter(m=>m.maq===t.id && m.manualH && !marcaM(m));
-          S.lecturas.push({fecha:Date.now(), tractor:t.id, horas:v, origen:'mano'});
+          const hueco = huecoSinSesiones(t, v), cuando = Date.now();
+          S.lecturas.push({fecha:cuando, tractor:t.id, horas:v, origen:'mano'});
           t.horometro = v; guardar(); pintar();
-          const nuevos = antes.filter(m=>marcaM(m) && !m.mAviso);
-          if(nuevos.length) hojaAvisoM(nuevos.map(m=>m.id)); else { cerrarHoja(); toast('Horómetro actualizado'); }
+          const seguir = ()=>{
+            const nuevos = antes.filter(m=>marcaM(m) && !m.mAviso);
+            if(nuevos.length) hojaAvisoM(nuevos.map(m=>m.id)); else { cerrarHoja(); toast('Horómetro actualizado'); }
+          };
+          if(hueco > 0) hojaIgualar(t, hueco, cuando, seguir); else seguir();
         };
         if(v < t.horometro || v - t.horometro > 24){
           const motivo = v < t.horometro ? `es menor que la anterior (${fmtH(t.horometro)} h)` : `sube ${fmtH(v-t.horometro)} h desde la última`;
@@ -539,6 +583,39 @@ function hojaHorometro(){
         }
         aplicar();
       };
+  });
+}
+
+/* horas del horómetro sin ninguna sesión desde la lectura anterior (0 si hubo sesiones) */
+function huecoSinSesiones(t, nuevo){
+  const dif = nuevo - t.horometro;
+  if(!(dif > 0)) return 0;
+  const ult = S.lecturas.filter(l=>l.tractor===t.id).sort((a,b)=>b.fecha-a.fecha)[0];
+  const desde = ult ? ult.fecha : (t.fechaAlta || 0);
+  if(S.sesion && S.sesion.tractor===t.id) return 0;
+  if(S.sesiones.some(s=>s.tractor===t.id && s.fin > desde)) return 0;
+  return Math.round(dif*10)/10;
+}
+function hojaIgualar(t, horas, fin, seguir){
+  const ap = apero(S.sel.apero), a = ap && esCompat(ap, t.id) ? ap : null;
+  abrirHoja(`<h3>Han pasado ${fmtH(horas)} h sin sesiones</h3>
+    <p>¿Qué hiciste? Se apuntan como una sesión para que cuenten los mantenimientos por horas de trabajo.</p>
+    <p class="nota" style="margin-top:0">Apero enganchado: ${a ? `${esc(a.nombre)} (${a.tipo==='suspendido'?'suspendido':'arrastrado'})` : 'ninguno'}.</p>
+    <button class="opc" data-m="campo"><span class="ico t">${I.campo}</span><span><span class="n">Campo</span><br><span class="s">${a?'Con '+esc(a.nombre):'Sin apero'}</span></span></button>
+    <button class="opc" data-m="carretera"><span class="ico a">${I.road}</span><span><span class="n">Carretera</span><br><span class="s">${a?'Con '+esc(a.nombre):'Sin apero'}</span></span></button>
+    <button class="opc" data-m="nose"><span class="ico a">?</span><span><span class="n">No lo sé</span><br><span class="s">Solo cuenta lo que vale igual en carretera y en campo</span></span></button>
+    <div class="acciones"><button id="no">Ahora no</button></div>`,()=>{
+      $('#no').onclick=()=>{ cerrarHoja(); setTimeout(seguir, 80); };
+      $('#hoja').querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{
+        /* la sesión acaba justo en la lectura del horómetro, para que la siguiente lectura sepa que después no hubo sesiones */
+        const ini = fin - horas*H;
+        const tr = {modo:b.dataset.m, tractor:t.id, apero:a?a.id:null, inicio:ini, fin};
+        /* las horas se suman enteras, aunque el mantenimiento se haya puesto a cero hace poco: el aviso sale antes, nunca tarde */
+        S.mants.forEach(m=>{ if(cuentaEnTramo(m,tr)) m.acum += horas; });
+        S.sesiones.push({inicio:ini, fin, tractor:t.id, tramos:[tr], igualada:true});
+        guardar(); pintar(); toast(`${fmtH(horas)} h apuntadas`);
+        seguir();
+      });
   });
 }
 
@@ -650,9 +727,9 @@ function horasTrabajo(id){
   },0),0);
 }
 function opsCuenta(tipo){
-  if(tipo==='autopropulsada') return [['siempre','En carretera y en campo'],['campo','Solo en campo'],['alza','Solo en campo con apero suspendido (alza)']];
-  if(tipo==='arrastrado') return [['campo','Solo en campo'],['siempre','En campo y en carretera (ruedas)']];
-  return [['campo','Solo en campo']];
+  if(tipo==='autopropulsada') return [['siempre','En carretera y en campo'],['campo','Solo en campo'],['alza','Solo en campo con apero suspendido (alza)'],['arrastrado','En carretera y en campo con apero arrastrado (enganche)'],['carretera','Solo en carretera']];
+  if(tipo==='arrastrado') return [['campo','Solo en campo'],['siempre','En campo y en carretera (ruedas)'],['carretera','Solo en carretera (ruedas de transporte)']];
+  return [['campo','Solo en campo'],['carretera','Solo en carretera']];
 }
 const tipoDe = id => tractor(id) ? 'autopropulsada' : apero(id).tipo;
 
@@ -697,7 +774,7 @@ function pintarFicha(){
   $('#vb').onclick=()=>history.back();
   $('#ren').onclick=()=>hojaRenombrar(id);
   $('#am').onclick=()=>hojaNuevoMant(id);
-  $('#dup').onclick=()=>asistente({paso:1, nombre:x.nombre+' (copia)', tipo:tipoDe(id), estado:'nueva', horometro:'', rutina:[...(x.rutina||[])], mants:S.mants.filter(m=>m.maq===id).map(m=>({nombre:m.nombre, intervalo:m.intervalo, meses:m.meses, quien:m.quien, nota:m.nota, manualH:m.manualH, reloj:m.reloj, cuenta:m.cuenta||'campo', ultimo:null}))});
+  $('#dup').onclick=()=>asistente({paso:1, nombre:x.nombre+' (copia)', tipo:tipoDe(id), estado:'nueva', horometro:'', rutina:[...(x.rutina||[])], mants:S.mants.filter(m=>m.maq===id).map(m=>({nombre:m.nombre, intervalo:m.intervalo, meses:m.meses, quien:m.quien, nota:m.nota, detalles:m.detalles, manualH:m.manualH, reloj:m.reloj, cuenta:m.cuenta||'campo', ultimo:null}))});
   if($('#rut')) $('#rut').onclick=()=>hojaRutina(id);
   if($('#pla')) $('#pla').onclick=()=>hojaCargarPlantilla(id);
   document.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>hojaDetalle(b.dataset.m));
@@ -732,6 +809,7 @@ function formMant(tipo, estado, horometro){
     <div id="mcw"><label class="f" for="mc">Cuándo cuentan las horas</label><select id="mc">${opsCuenta(tipo).map(([v,t])=>`<option value="${v}">${t}</option>`).join('')}</select>
       ${conReloj?`<label class="f" for="mh">Según el manual, cada (h de horómetro)</label>${campoNumero('mh')}<p class="nota" style="margin-top:2px">Opcional. Si el horómetro llega antes, te avisa con una M.</p>`:''}</div>
     <label class="f" for="mo">Referencia del manual (opcional)</label><input id="mo" placeholder="Case IH: cada 600 h (pág. 7-43)">
+    <label class="f" for="md">Detalles (opcional)</label><textarea id="md" rows="3" placeholder="Cantidades, pasos o lo que quieras leer al hacerlo"></textarea>
     ${estado==='usada'?`<label class="f" for="mu" id="mul">Horas de trabajo desde la última vez</label>${campoNumero('mu',0)}
       <label class="f" for="mf">Fecha de la última vez</label><input id="mf" type="date" value="${hoyISO()}" max="${hoyISO()}"><p class="nota" style="margin-top:2px">Si no la sabes, deja hoy.</p>`:''}`;
 }
@@ -754,7 +832,7 @@ function leerFormMant(tipo, estado, horometro){
     fecha = fechaDe($('#mf').value);
     if(fecha > Date.now()+60000) return {error:'La fecha de la última vez no puede ser futura.'};
   }
-  return {nombre:n, intervalo:iv, meses:me.v, quien:valSeg('#mq'), nota:$('#mo').value.trim(), manualH:mh, reloj:rel, cuenta: rel==='motor'?null:$('#mc').value, ultimo, fecha};
+  return {nombre:n, intervalo:iv, meses:me.v, quien:valSeg('#mq'), nota:$('#mo').value.trim(), detalles:$('#md').value.trim(), manualH:mh, reloj:rel, cuenta: rel==='motor'?null:$('#mc').value, ultimo, fecha};
 }
 function enlazarFormMant(estado, horometro){
   enlazarSeg('#mq');
@@ -767,7 +845,7 @@ function enlazarFormMant(estado, horometro){
   });
 }
 function crearMant(maqId, d, horometro){
-  const m = {id:nuevoId('k'), maq:maqId, nombre:d.nombre, intervalo:d.intervalo||null, meses:d.meses||null, quien:d.quien||'yo', nota:d.nota||'', reloj:d.reloj, fecha:d.fecha||Date.now()};
+  const m = {id:nuevoId('k'), maq:maqId, nombre:d.nombre, intervalo:d.intervalo||null, meses:d.meses||null, quien:d.quien||'yo', nota:d.nota||'', detalles:d.detalles||'', reloj:d.reloj, fecha:d.fecha||Date.now()};
   if(d.reloj==='motor') m.ultima = d.ultimo!=null ? d.ultimo : horometro;
   else {
     m.cuenta=d.cuenta; m.acum = d.ultimo!=null ? d.ultimo : 0; m.desde = Date.now();
@@ -797,6 +875,7 @@ function hojaEditarMant(id){
     ${segQuien(m.quien)}
     ${trab && t ? `<label class="f" for="mh">Según el manual, cada (h de horómetro)</label>${campoNumero('mh', m.manualH??undefined)}` : ''}
     <label class="f" for="mo">Referencia del manual (opcional)</label><input id="mo" value="${esc(m.nota)}">
+    <label class="f" for="md">Detalles (opcional)</label><textarea id="md" rows="4">${esc(m.detalles)}</textarea>
     <hr class="sep"><p class="peq">Última vez que se hizo</p>
     <label class="f" for="mu">${trab ? 'Horas de trabajo desde entonces' : 'Horómetro cuando se hizo'}</label>${campoNumero('mu', trab ? acumVis : (m.ultima??undefined))}
     <label class="f" for="mf">Fecha</label><input id="mf" type="date" value="${isoDe(m.fecha||Date.now())}" max="${hoyISO()}">
@@ -816,7 +895,7 @@ function hojaEditarMant(id){
       if(!trab && t && u!=null && u>t.horometro) return err(`No puede ser mayor que el horómetro actual (${fmtH(t.horometro)} h).`);
       const f = fechaDe($('#mf').value);
       if(f > Date.now()+60000) return err('La fecha no puede ser futura.');
-      m.nombre=n; m.intervalo=iv; m.meses=me.v; m.quien=valSeg('#mq'); m.nota=$('#mo').value.trim(); m.fecha=f;
+      m.nombre=n; m.intervalo=iv; m.meses=me.v; m.quien=valSeg('#mq'); m.nota=$('#mo').value.trim(); m.detalles=$('#md').value.trim(); m.fecha=f;
       if(trab){
         if(u!=null && Math.abs(u-acumVis)>0.05){ m.acum=u; m.desde=Date.now(); if(t) m.ultimaHoro=Math.max(0,t.horometro-u); }
         if(t){ m.manualH = mh||null; if(m.manualH && m.ultimaHoro==null) m.ultimaHoro=Math.max(0,t.horometro-m.acum); }
@@ -888,7 +967,7 @@ function asistente(base){
   }
   function finalizar(){
     const id = nuevoId(w.tipo==='autopropulsada'?'t':'a');
-    if(w.tipo==='autopropulsada'){ const h=parseFloat(w.horometro); S.tractores.push({id, nombre:w.nombre, horometro:h, horometroAlta:h, rutina:w.rutina||[]}); if(!S.sel.tractor) S.sel.tractor=id; }
+    if(w.tipo==='autopropulsada'){ const h=parseFloat(w.horometro); S.tractores.push({id, nombre:w.nombre, horometro:h, horometroAlta:h, fechaAlta:Date.now(), rutina:w.rutina||[]}); if(!S.sel.tractor) S.sel.tractor=id; }
     else { S.aperos.push({id, nombre:w.nombre, tipo:w.tipo, compatTodos:true, compat:[]}); if(!S.sel.apero) S.sel.apero=id; }
     w.mants.forEach(d=>crearMant(id, w.estado==='usada'?d:{...d, ultimo:null}, horo()));
     guardar(); cerrarHoja(); toast(`${w.nombre} añadido`);
@@ -906,6 +985,7 @@ const inicioDia = ms => { const d=new Date(ms); d.setHours(0,0,0,0); return d.ge
 const sumarDias = (ms,n) => { const d=new Date(ms); d.setDate(d.getDate()+n); return d.getTime(); };
 const hora = ms => new Date(ms).toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'});
 const nombreApero = id => { const a=apero(id); return a ? a.nombre : 'Sin apero'; };
+const nombreModo = m => m==='campo' ? 'Campo' : m==='nose' ? 'Sin saber (igualado)' : 'Carretera';
 function todasSesiones(){
   const l = S.sesiones.map((s,i)=>({s,i}));
   if(S.sesion){ const tr=S.sesion.tramos.map(t=>({...t, fin:t.fin||Date.now()})); l.push({s:{...S.sesion, tramos:tr, fin:Date.now()}, i:-1}); }
@@ -955,7 +1035,7 @@ function pintarDia(){
     for(let h=hIni; h<=hFin; h++) html += `<div class="hl" style="top:${(h-hIni)*PX}px">${String(h).padStart(2,'0')}:00</div>`;
     bloques.forEach(x=>{
       const top=((x.a-d0)/H-hIni)*PX, alto=Math.max(24,(x.b-x.a)/H*PX-2);
-      const txt=`${x.t.modo==='campo'?'Campo':'Carretera'}, ${nombreApero(x.t.apero)}<br>${hora(x.a)} a ${x.i===-1&&x.t.fin>=Date.now()-1000?'ahora':hora(x.b)}${x.partida?' (sesión partida)':''}`;
+      const txt=`${nombreModo(x.t.modo)}, ${nombreApero(x.t.apero)}<br>${hora(x.a)} a ${x.i===-1&&x.t.fin>=Date.now()-1000?'ahora':hora(x.b)}${x.partida?' (sesión partida)':''}`;
       html += `<button class="blk ${x.t.modo} ${x.i===-1?'abierta':''}" data-i="${x.i}" style="top:${top+1}px;height:${alto}px">${txt}</button>`;
     });
     cuerpo = `<div class="agenda" style="height:${(hFin-hIni)*PX+8}px">${html}</div>`;
@@ -980,7 +1060,7 @@ function hojaSesion(i, borrador){
   const cambiado = JSON.stringify(d)!==JSON.stringify(ses.tramos);
   const ini=d[0].inicio, fin=d[d.length-1].fin, total=(fin-ini)/H;
   const cruza = inicioDia(ini)!==inicioDia(fin-1);
-  const lista = d.map((t,j)=>`<button class="tramo" data-j="${j}"><span class="bar ${t.modo}"></span><span>${t.modo==='campo'?'Campo':'Carretera'}<br><span class="s" style="font-size:13px;color:var(--text2)">${nombreApero(t.apero)}</span></span><span class="der">${hora(t.inicio)} a ${hora(t.fin)}</span></button>`).join('');
+  const lista = d.map((t,j)=>`<button class="tramo" data-j="${j}"><span class="bar ${t.modo}"></span><span>${nombreModo(t.modo)}<br><span class="s" style="font-size:13px;color:var(--text2)">${nombreApero(t.apero)}</span></span><span class="der">${hora(t.inicio)} a ${hora(t.fin)}</span></button>`).join('');
   abrirHoja(`<h3>Sesión de ${hora(ini)} a ${hora(fin)}</h3>
     <p>${tractor(ses.tractor).nombre}, ${fmtH(total)} h en total.${cruza?' Cruza la medianoche: se ve en los dos días.':''}${cambiado?' Tienes cambios sin guardar.':''}</p>
     <div class="tramos">${lista}</div>
@@ -997,7 +1077,7 @@ function hojaSesion(i, borrador){
 function hojaTramo(i, d, j){
   const t = d[j], ses = S.sesiones[i];
   const aps = S.aperos.filter(a=>esCompat(a, ses.tractor));
-  const opsAp = sel => aps.map(a=>`<option value="${a.id}" ${a.id===sel?'selected':''}>${a.nombre}</option>`).join('');
+  const opsAp = sel => `<option value="" ${!sel?'selected':''}>Sin apero</option>` + aps.map(a=>`<option value="${a.id}" ${a.id===sel?'selected':''}>${a.nombre}</option>`).join('');
   abrirHoja(`<h3>Tramo ${j+1} de ${d.length}</h3>
     <div class="seg" id="md"><button data-v="carretera" class="${t.modo==='carretera'?'sel':''}">Carretera</button><button data-v="campo" class="${t.modo==='campo'?'sel':''}">Campo</button></div>
     <label class="f" for="ti">Empieza</label><input type="datetime-local" id="ti" value="${aLocal(t.inicio)}">
@@ -1008,7 +1088,7 @@ function hojaTramo(i, d, j){
     <hr class="sep"><p class="peq">Cambio de apero dentro de este tramo</p>
     <p class="nota" style="margin-top:0">Si a mitad del tramo cambiaste de apero y no lo marcaste.</p>
     <label class="f" for="dh">A qué hora</label><input type="datetime-local" id="dh" value="${aLocal(t.inicio+(t.fin-t.inicio)/2)}">
-    <label class="f" for="da">Nuevo apero</label><select id="da">${opsAp(aps.find(a=>a.id!==t.apero)?.id)}</select>
+    <label class="f" for="da">Nuevo apero</label><select id="da">${opsAp(t.apero ? null : aps[0]?.id)}</select>
     <div class="err" id="err2"></div>
     <div class="acciones"><button id="div">Meter cambio de apero</button></div>`,()=>{
       let modo=t.modo;
@@ -1021,13 +1101,13 @@ function hojaTramo(i, d, j){
         if(j>0 && ni<=d[j-1].inicio){ $('#err').textContent=`No puede empezar antes de que empiece el tramo anterior (${hora(d[j-1].inicio)}).`; return; }
         if(j<d.length-1 && nf>=d[j+1].fin){ $('#err').textContent=`No puede terminar después de que termine el tramo siguiente (${hora(d[j+1].fin)}).`; return; }
         if(nf>Date.now()){ $('#err').textContent='No puede terminar en el futuro.'; return; }
-        t.inicio=ni; t.fin=nf; t.modo=modo; t.apero=$('#ta').value;
+        t.inicio=ni; t.fin=nf; t.modo=modo; t.apero=$('#ta').value||null;
         if(j>0) d[j-1].fin=ni;
         if(j<d.length-1) d[j+1].inicio=nf;
         hojaSesion(i, d);
       };
       $('#div').onclick=()=>{
-        const h=new Date($('#dh').value).getTime(), na=$('#da').value;
+        const h=new Date($('#dh').value).getTime(), na=$('#da').value||null;
         if(isNaN(h)){ $('#err2').textContent='Indica la hora del cambio.'; return; }
         if(h<=t.inicio || h>=t.fin){ $('#err2').textContent=`La hora debe estar entre ${hora(t.inicio)} y ${hora(t.fin)}.`; return; }
         if(na===t.apero){ $('#err2').textContent='Elige un apero distinto del que ya lleva el tramo.'; return; }
@@ -1291,6 +1371,7 @@ function hojaDetalle(id){
       ${m.intervalo?`<dt>Cuenta por</dt><dd>${m.reloj==='motor'?'Horas de motor (horómetro)':'Horas de trabajo (app)'}</dd>`:''}
       <dt>Toca</dt><dd>${cadaTexto(m).replace(/^c/,'C')}</dd>
       ${m.nota?`<dt>Manual</dt><dd>${esc(m.nota)}</dd>`:''}
+      ${m.detalles?`<dt>Detalles</dt><dd class="txt">${esc(m.detalles)}</dd>`:''}
       ${m.manualH?`<dt>Según el manual</dt><dd>${marcaM(m)?'<span class="mk">M</span> ':''}Cada ${fmtH(m.manualH)} h de horómetro: ${textoManual(m)}</dd>`:''}
       <dt>Última vez</dt><dd>${ultimo}</dd>
       <dt>Estado</dt><dd>${e==='r'?'Pasado':e==='y'?'Inminente':'Al día'}, ${textoMant(m)}</dd>
@@ -1326,6 +1407,7 @@ function hojaHecho(id, alAcabar){
   const conTrab = m.reloj==='trabajo' && !!m.intervalo;
   const acumAhora = conTrab ? m.intervalo - horasRestantes(m) : 0;
   abrirHoja(`<h3>${esc(m.nombre)} hecho</h3><p>${nombreMaq(m.maq)}.${conHoro?' Indica el horómetro cuando lo hiciste. Si fue ahora, deja la última lectura.':''}${conTrab?' Si lo acabas de hacer, deja 0. Si fue antes, indica cuántas horas de trabajo han pasado desde entonces.':''}</p>
+    ${m.detalles?`<div class="detalles">${esc(m.detalles)}</div>`:''}
     ${conHoro?`<label class="f" for="h">Horas del horómetro</label>${campoNumero('h', t.horometro)}`:''}
     ${conTrab?`<label class="f" for="h">Horas de trabajo desde que lo hiciste</label>${campoNumero('h', 0)}`:''}
     <label class="f" for="fd">Fecha</label><input id="fd" type="date" value="${hoyISO()}" max="${hoyISO()}">
@@ -1538,43 +1620,50 @@ function pintarAverias(){
    Intervalos del cuadro de mantenimiento del manual del operador (1.ª ed. español, oct. 2018, apartado 7).
    Donde Alejandro decidió algo distinto al manual, la nota lo dice. */
 const PLANTILLA = (()=>{
-  const M=(nombre, intervalo, meses, quien, reloj, nota, extra={}) => ({nombre, intervalo, meses, quien, reloj, nota:'Case IH: '+nota, cuenta: reloj==='trabajo' ? 'siempre' : null, ...extra});
+  /* M(nombre, horas, meses, quién, reloj, referencia, extra). reloj 'trabajo' cuenta 'siempre' salvo que extra diga otra cosa */
+  const M=(nombre, intervalo, meses, quien, reloj, nota, extra={}) => ({nombre, intervalo, meses, quien, reloj, nota, detalles:'', cuenta: reloj==='trabajo' ? 'siempre' : null, ...extra});
+  const C = t => 'Case IH: '+t;
   return {
     nombre:'Case IH Puma 240 CVX Stage IV', corto:'Puma 240',
-    rutina:['Nivel de refrigerante','Nivel de aceite de motor','Limpiar cristales'],
+    rutina:['Nivel de refrigerante','Nivel de aceite de motor','Limpiar cristales','Mirar nivel de la botella de los distribuidores'],
     mants:[
-      M('Limpiar filtros de aire de cabina', 50, null, 'yo', 'motor', 'cada 50 h (pág. 7-23)'),
-      M('Limpiar SCR', 50, null, 'yo', 'motor', 'cada 50 h (pág. 7-25)'),
-      M('Limpiar radiadores', 50, null, 'yo', 'motor', 'cada 50 h (pág. 7-26)'),
-      M('Engrasadores', 50, null, 'yo', 'trabajo', 'cada 50 h de horómetro (pág. 7-28). Pendiente separar por grupos', {manualH:50}),
-      M('Comprobar correas', 100, null, 'yo', 'motor', 'cada 100 h (pág. 7-36 y 7-37)'),
-      M('Nivel de líquido de batería', 300, null, 'yo', 'motor', 'cada 300 h (pág. 7-38)'),
-      M('Nivel de aceite de transmisión', 300, null, 'yo', 'motor', 'cada 300 h (pág. 7-40)'),
-      M('Ajuste del freno de mano', 300, null, 'yo', 'motor', 'cada 300 h (pág. 7-41)'),
-      M('Nivel de aceite del eje delantero', 300, null, 'taller', 'motor', 'cada 300 h (pág. 7-42)'),
-      M('Aceite y filtro de motor', 350, null, 'yo', 'motor', 'cada 600 h (pág. 7-43). Lo cambias cada 350 h'),
-      M('Filtros de combustible', 600, null, 'yo', 'motor', 'cada 600 h, 1.ª fase y cartucho (pág. 7-45)'),
-      M('Limpiar prelimpiador de aire', 600, null, 'yo', 'motor', 'cada 600 h (pág. 7-47)'),
-      M('Filtros hidráulicos de alimentación y retorno', 600, null, 'taller', 'motor', 'cada 600 h (pág. 7-48)'),
-      M('Revisar admisión de aire', 600, null, 'yo', 'motor', 'cada 600 h (pág. 7-49)'),
-      M('Transmisión, limpieza', 600, null, 'taller', 'motor', 'cada 600 h (pág. 7-50)'),
-      M('Filtro en línea AdBlue', 600, null, 'taller', 'motor', 'cada 600 h (pág. 7-50)'),
-      M('Cambiar filtros de aire de cabina', 1200, 12, 'yo', 'motor', 'cada 1.200 h o 1 año (pág. 7-51)'),
-      M('Filtro de aspiración hidráulica', 1200, 12, 'taller', 'motor', 'cada 1.200 h o 1 año (pág. 7-52)'),
-      M('Aceite de diferencial y planetarios', 1200, 12, 'taller', 'motor', 'cada 1.200 h o 1 año (pág. 7-53)'),
-      M('Aceite de cubos delanteros', 1200, 12, 'taller', 'motor', 'cada 1.200 h o 1 año (pág. 7-54)'),
-      M('Engrase del cojinete del eje trasero', 1200, 12, 'taller', 'motor', 'cada 1.200 h o 1 año (pág. 7-55)'),
-      M('Filtro AdBlue 1.200 h', 1200, 24, 'taller', 'motor', 'cada 1.200 h o 2 años (pág. 7-56)'),
-      M('Cartucho interior del filtro de aire', 1200, 24, 'taller', 'motor', 'cada 1.200 h o 2 años (pág. 7-57)'),
-      M('Holgura de válvulas', 1200, 24, 'taller', 'motor', 'cada 1.200 h o 2 años (pág. 7-58)'),
-      M('Frenos neumáticos del remolque', 1200, 24, 'taller', 'motor', 'cada 1.200 h o 2 años (pág. 7-58)'),
-      M('Cambiar correas trapezoidales', 1200, 24, 'taller', 'motor', 'cada 1.200 h o 2 años (pág. 7-59)'),
-      M('Aceite de transmisión', 1200, 24, 'taller', 'motor', 'cada 1.200 h o 2 años (pág. 7-61)'),
-      M('Filtro del respiradero del motor', 1800, 24, 'taller', 'motor', 'cada 1.800 h o 2 años (pág. 7-63)'),
-      M('Filtro AdBlue 3.600 h', 3600, 24, 'taller', 'motor', 'cada 3.600 h o 2 años (pág. 7-63)'),
-      M('Refrigerante del motor', 3600, 48, 'taller', 'motor', 'cada 3.600 h o 4 años (pág. 7-64)'),
-      M('Deshumidificador del aire acondicionado', null, 24, 'taller', 'motor', 'cada 2 años (pág. 7-62)'),
-      M('Vaciar botella de la válvula remota', null, 1, 'yo', 'motor', 'cada 10 h (pág. 7-20). Lo haces cada mes')
+      M('Limpiar filtros de aire de cabina', 50, null, 'yo', 'motor', C('cada 50 h (pág. 7-23)')),
+      M('Limpiar rejillas de aire de la tapa del SCR', 50, null, 'yo', 'motor', C('cada 50 h (pág. 7-25)'), {detalles:'Aire comprimido o agua a presión, máximo 7 bar. Usar gafas.'}),
+      M('Limpiar radiadores', 50, null, 'yo', 'motor', C('cada 50 h (pág. 7-26)')),
+      M('Soplar filtro de aire del motor', 50, null, 'yo', 'motor', 'Decisión tuya. El manual solo lo trata con la luz de advertencia (pág. 7-16)'),
+      M('Engrasar alza trasera', 50, null, 'yo', 'trabajo', C('cada 50 h de horómetro (pág. 7-28)'), {cuenta:'alza', manualH:50}),
+      M('Engrasar eje delantero y dirección', 50, null, 'yo', 'trabajo', C('cada 50 h de horómetro (pág. 7-30, 7-31 y cubo inferior)'), {cuenta:'siempre', manualH:50}),
+      M('Engrasar enganche delantero', null, 1, 'yo', 'motor', C('cada 50 h. Lo haces cada mes')),
+      M('Engrasar enganche de tiro (2 engrasadores)', 50, null, 'yo', 'trabajo', C('cada 50 h de horómetro'), {cuenta:'arrastrado', manualH:50}),
+      M('Comprobar correas', 100, null, 'yo', 'motor', C('cada 100 h (pág. 7-36 y 7-37)')),
+      M('Nivel de líquido de batería', 300, null, 'yo', 'motor', C('cada 300 h (pág. 7-38)')),
+      M('Nivel de aceite de transmisión', 300, null, 'yo', 'motor', C('cada 300 h (pág. 7-40)')),
+      M('Ajuste del freno de mano', 300, null, 'yo', 'motor', C('cada 300 h (pág. 7-41)')),
+      M('Nivel de aceite del eje delantero', 300, null, 'taller', 'motor', C('cada 300 h (pág. 7-42)')),
+      M('Aceite y filtro de motor', 350, null, 'yo', 'motor', C('cada 600 h (pág. 7-43). Lo cambias cada 350 h')),
+      M('Filtros de gasoil y separador de agua', 600, null, 'yo', 'motor', C('filtros cada 600 h (pág. 7-45); el separador no tiene intervalo (pág. 7-71). Van juntos por decisión tuya')),
+      M('Cambiar elemento exterior del filtro de aire', 600, null, 'yo', 'motor', C('cada 600 h (pág. 7-47)')),
+      M('Filtros hidráulicos de alimentación y retorno', 600, null, 'taller', 'motor', C('cada 600 h (pág. 7-48)')),
+      M('Revisar admisión de aire', 600, null, 'yo', 'motor', C('cada 600 h (pág. 7-49)')),
+      M('Comprobar fugas en tubos del radiador de aceite de transmisión', 600, null, 'yo', 'motor', C('cada 600 h (pág. 7-50)')),
+      M('Limpiar filtro en línea AdBlue (100 µm)', 600, null, 'taller', 'motor', C('cada 600 h (pág. 7-50)')),
+      M('Cambiar filtros de aire de cabina', 1200, 12, 'yo', 'motor', C('cada 1.200 h o 1 año (pág. 7-51)')),
+      M('Filtro de aspiración hidráulica', 1200, 12, 'taller', 'motor', C('cada 1.200 h o 1 año (pág. 7-52)')),
+      M('Aceite de diferencial y planetarios', 1200, 12, 'taller', 'motor', C('cada 1.200 h o 1 año (pág. 7-53)')),
+      M('Aceite de cubos delanteros', 1200, 12, 'taller', 'motor', C('cada 1.200 h o 1 año (pág. 7-54)')),
+      M('Engrase del cojinete del eje trasero', 1200, 12, 'yo', 'trabajo', C('cada 1.200 h de horómetro o 1 año (pág. 7-55)'), {cuenta:'siempre', manualH:1200,
+        detalles:'85 cm³ de grasa por lado, en dos veces.\n1. Aplica la mitad en cada lado (unos 42 cm³).\n2. Gira las ruedas 120º.\n3. Aplica la otra mitad en cada lado.\n4. Vuelve a girar las ruedas 120º para que se reparta la grasa.'}),
+      M('Cambiar filtro en línea AdBlue (100 µm)', 1200, 24, 'taller', 'motor', C('cada 1.200 h o 2 años (pág. 7-56)')),
+      M('Cartucho interior del filtro de aire', 1200, 24, 'taller', 'motor', C('cada 1.200 h o 2 años (pág. 7-57)')),
+      M('Holgura de válvulas', 1200, 24, 'taller', 'motor', C('cada 1.200 h o 2 años (pág. 7-58)')),
+      M('Frenos neumáticos del remolque', 1200, 24, 'taller', 'motor', C('cada 1.200 h o 2 años (pág. 7-58)')),
+      M('Cambiar correas trapezoidales', 1200, 24, 'taller', 'motor', C('cada 1.200 h o 2 años (pág. 7-59)')),
+      M('Aceite de transmisión', 1200, 24, 'taller', 'motor', C('cada 1.200 h o 2 años (pág. 7-61)')),
+      M('Filtro del respiradero del motor', 1800, 24, 'taller', 'motor', C('cada 1.800 h o 2 años (pág. 7-63)')),
+      M('Cambiar filtro principal AdBlue (10 µm)', 3600, 24, 'taller', 'motor', C('cada 3.600 h o 2 años (pág. 7-63)')),
+      M('Refrigerante del motor', 3600, 48, 'taller', 'motor', C('cada 3.600 h o 4 años (pág. 7-64)')),
+      M('Deshumidificador del aire acondicionado', null, 24, 'taller', 'motor', C('cada 2 años (pág. 7-62)')),
+      M('Revisar y vaciar botella de los distribuidores', null, 1, 'yo', 'motor', C('cada 10 h o cada día (pág. 7-20). Lo haces cada mes. Se pone a cero solo al marcarlo como hecho, no con la rutina'))
     ]
   };
 })();
@@ -1595,6 +1684,7 @@ function hojaCargarPlantilla(tid){
 }
 
 function pintar(){
+  pintarContadorNotas();
   const d = new Date();
   $('#fecha').textContent = d.toLocaleDateString('es-ES',{weekday:'long',day:'numeric',month:'long'}).replace(/^./,c=>c.toUpperCase());
   pintarNav();
@@ -1605,6 +1695,7 @@ function pintar(){
   else if(seccion==='maquinas') pintarMaquinas();
   else if(seccion==='salir') pintarSalir();
   else if(seccion==='averias') pintarAverias();
+  else if(seccion==='notas') pintarNotas();
   else {
     const nom = SECCIONES.find(s=>s[0]===seccion)[1];
     $('#vista').innerHTML = `<div class="prox"><h2 style="font-weight:500;color:var(--text)">${nom}</h2><p>Esta sección la construiremos en los siguientes pasos.</p></div>`;
@@ -1650,6 +1741,104 @@ document.addEventListener('visibilitychange', ()=>{
 });
 setTimeout(comprobarAvisos, 500);
 
+/* ---------- notas de uso ---------- */
+let notasOrigen = 'Inicio', notasFiltro = 'pendientes';
+function nombrePantalla(){
+  if(seccion==='maquinas' && maqFicha){ const x=tractor(maqFicha)||apero(maqFicha); return x ? `Ficha de ${x.nombre}` : 'Máquinas'; }
+  if(seccion==='dias') return diasModo==='dia' ? 'Días (agenda de un día)' : 'Días (calendario)';
+  if(seccion==='salir') return 'Antes de salir';
+  if(seccion==='notas') return notasOrigen;
+  const nombres = {inicio:'Inicio', mant:'Mantenimientos', gasoil:'Combustible', maquinas:'Máquinas', averias:'Averías', stats:'Estadísticas', notif:'Avisos'};
+  return nombres[seccion] || seccion;
+}
+const pendientesNotas = () => S.notas.filter(n=>n.estado==='pendiente');
+function pintarContadorNotas(){
+  const b = $('#btnNotas'); if(!b) return;
+  const n = pendientesNotas().length;
+  b.querySelector('.cnt')?.remove();
+  if(n) b.insertAdjacentHTML('beforeend', `<span class="cnt" aria-hidden="true">${n}</span>`);
+  b.setAttribute('aria-label', n ? `Notas de uso, ${n} pendientes` : 'Notas de uso');
+}
+const ESTADOS_NOTA = {pendiente:'Pendiente', resuelta:'Resuelta', descartada:'Descartada'};
+const fechaNota = ms => new Date(ms).toLocaleDateString('es-ES',{day:'2-digit',month:'2-digit',year:'numeric'})+' '+hora(ms);
+function metaNota(n){
+  const maq = [n.tractor, n.apero].filter(Boolean).join(', ') || 'sin máquina';
+  return `Nº ${n.n}, ${fecha(n.fecha)}. ${n.pantalla}. ${maq}. v${n.version}${n.estado!=='pendiente'?'. '+ESTADOS_NOTA[n.estado]:''}${n.editada?'. Editada':''}`;
+}
+function abrirNotas(){
+  if(seccion!=='notas') notasOrigen = nombrePantalla();
+  notasFiltro = 'pendientes';
+  irA('notas');
+}
+function pintarNotas(){
+  const lista = S.notas.filter(n=>notasFiltro==='todas' || n.estado==='pendiente').sort((a,b)=>a.fecha-b.fecha);
+  const np = pendientesNotas().length;
+  $('#vista').innerHTML = `<div class="mes"><button class="flecha" id="vb" aria-label="Volver">${FL.izq}</button><h2>Notas de uso</h2><span style="width:44px"></span></div>
+    <p class="pista">Apunta fallos, ideas o atajos mientras usas la app. Puedes dictar con el micrófono del teclado. Se guarda sola la fecha, la pantalla (${esc(notasOrigen)}), el tractor y el apero.</p>
+    <div class="seg" id="nf"><button data-v="pendientes" class="${notasFiltro==='pendientes'?'sel':''}">Pendientes (${np})</button><button data-v="todas" class="${notasFiltro==='todas'?'sel':''}">Todas (${S.notas.length})</button></div>
+    <div class="acciones" style="margin-top:10px"><button id="cpn">Copiar pendientes</button></div>
+    <div class="err" id="errn"></div>
+    <div class="notas" style="margin-top:6px">${lista.length ? lista.map(n=>`<button class="burbuja ${n.estado!=='pendiente'?'hecha':''}" data-n="${n.id}">${esc(n.texto)}<span class="meta">${esc(metaNota(n))}</span></button>`).join('') : `<div class="vacio">${notasFiltro==='todas'?'Todavía no hay notas.':'No hay notas pendientes.'} Escribe la primera abajo.</div>`}</div>
+    <div class="redactar"><div class="fila2"><textarea id="nt" rows="2" placeholder="Escribe o dicta una nota"></textarea><button id="gn">Guardar</button></div></div>`;
+  $('#vb').onclick=()=>history.back();
+  $('#nf').querySelectorAll('button').forEach(b=>b.onclick=()=>{ notasFiltro=b.dataset.v; pintarNotas(); });
+  $('#gn').onclick=()=>{
+    const v = $('#nt').value.trim();
+    if(!v){ $('#errn').textContent='Escribe algo antes de guardar.'; return; }
+    const t = tractor(S.sel.tractor), a = apero(S.sel.apero);
+    S.notas.push({id:nuevoId('n'), n:S.notaSig++, fecha:Date.now(), texto:v, pantalla:notasOrigen, tractor:t?t.nombre:'', apero:a?a.nombre:'', version:VERSION_APP, estado:'pendiente'});
+    guardar(); pintar(); toast('Nota guardada');
+    window.scrollTo(0, document.body.scrollHeight);
+  };
+  $('#cpn').onclick=async()=>{
+    const p = pendientesNotas().sort((a,b)=>a.fecha-b.fecha);
+    if(!p.length){ $('#errn').textContent='No hay notas pendientes que copiar.'; return; }
+    const txt = `Analiza estas notas de uso de mi app de mantenimiento (versión ${VERSION_APP}). Para cada una, por su número, dime qué crees que pasa, qué propones y en qué versión entraría.\n\n` +
+      p.map(n=>`Nº ${n.n} | ${fechaNota(n.fecha)} | Pantalla: ${n.pantalla} | Tractor: ${n.tractor||'ninguno'} | Apero: ${n.apero||'ninguno'} | v${n.version}\n${n.texto}`).join('\n\n');
+    try{ await navigator.clipboard.writeText(txt); toast(`${p.length} ${p.length===1?'nota copiada':'notas copiadas'}`); }
+    catch(e){ $('#errn').textContent='No se ha podido copiar. Inténtalo otra vez.'; }
+  };
+  document.querySelectorAll('[data-n]').forEach(b=>b.onclick=()=>hojaNota(b.dataset.n));
+  window.scrollTo(0, document.body.scrollHeight);
+}
+function hojaNota(id){
+  const n = S.notas.find(x=>x.id===id); if(!n) return;
+  abrirHoja(`<h3>Nota nº ${n.n}</h3><p>${esc(metaNota(n))}</p>
+    <label class="f" for="tx">Texto</label><textarea id="tx" rows="4">${esc(n.texto)}</textarea>
+    <label class="f">Estado</label><div class="seg" id="es">${Object.entries(ESTADOS_NOTA).map(([v,t])=>`<button data-v="${v}" class="${n.estado===v?'sel':''}">${t}</button>`).join('')}</div>
+    <div class="err" id="err"></div>
+    <div class="acciones"><button id="no">Cancelar</button><button class="ok" id="si">Guardar</button></div>
+    <div class="acciones"><button class="peligro" id="del">Borrar nota</button></div>`,()=>{
+      enlazarSeg('#es');
+      $('#no').onclick=()=>cerrarHoja();
+      $('#si').onclick=()=>{
+        const v = $('#tx').value.trim();
+        if(!v){ $('#err').textContent='La nota no puede quedar vacía. Si sobra, bórrala.'; return; }
+        if(v!==n.texto){ n.texto=v; n.editada=true; }
+        n.estado = valSeg('#es'); n.cambio = Date.now();
+        guardar(); cerrarHoja(); pintar(); toast('Nota guardada');
+      };
+      $('#del').onclick=()=>abrirHoja(`<h3>¿Borrar la nota nº ${n.n}?</h3><p>${esc(n.texto)}</p><p>No se puede deshacer. Si ya está arreglada, mejor márcala como resuelta.</p><div class="acciones"><button id="no2">Cancelar</button><button class="peligro" id="si2">Borrar</button></div>`,()=>{
+        $('#no2').onclick=()=>cerrarHoja();
+        $('#si2').onclick=()=>{ S.notas=S.notas.filter(x=>x.id!==id); guardar(); cerrarHoja(); pintar(); toast('Nota borrada'); };
+      });
+  });
+}
+$('#btnNotas').onclick=abrirNotas;
+
+/* ---------- novedades de la versión ---------- */
+const NOVEDADES = [
+  'Notas de uso: con el botón de la libreta, arriba, apuntas fallos e ideas en cualquier pantalla. "Copiar pendientes" las prepara para pegarlas en un chat con Claude.',
+  'Al actualizar el horómetro, si no ha habido sesiones desde la lectura anterior, la app pregunta qué hiciste (campo, carretera o no lo sé) y apunta esas horas.',
+  'Quitar apero: toca el apero en Inicio. Sin apero, solo cuentan las horas del tractor.',
+  'Reglas nuevas para contar horas: con apero arrastrado (para el enganche de tiro) y solo en carretera (por ejemplo, ruedas de transporte).',
+  'Detalles en cada mantenimiento: se leen en su ficha y al marcarlo como hecho.',
+  'Plantilla del Puma actualizada: 36 mantenimientos, engrasadores por grupos y la botella de los distribuidores en la rutina diaria.',
+  'La versión de la app sale en Ajustes.'
+];
+function hojaNovedades(){
+  abrirHoja(`<h3>Novedades de la versión ${VERSION_APP}</h3><ul class="novedades">${NOVEDADES.map(x=>`<li>${esc(x)}</li>`).join('')}</ul><div class="acciones"><button class="ok" id="si">Entendido</button></div>`,()=>{ $('#si').onclick=()=>cerrarHoja(); });
+}
 $('#btnAtras').onclick=()=>{ if(hojaAbierta) cerrarHoja(); else if(seccion!=='inicio') history.back(); };
 /* ---------- sincronización con Drive ---------- */
 const CFG = 'mant-app-cfg', SYN = 'mant-app-sync';
@@ -1700,6 +1889,9 @@ document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState=
 function hojaAjustes(){
   const est = sync.error ? `\u00daltimo error: ${sync.error}` : sync.ultimo ? `\u00daltima subida: ${fecha(sync.ultimo)}` : 'Todav\u00eda no se ha subido nada.';
   abrirHoja(`<h3>Ajustes</h3>
+    <p class="nota" style="margin-top:0">Versión ${VERSION_APP}</p>
+    <div class="acciones" style="margin-top:4px"><button id="nv">Ver novedades</button></div>
+    <hr class="sep">
     <p class="peq" style="margin-top:8px">Conexi\u00f3n con la hoja de Drive</p>
     <label class="f" for="cu">Direcci\u00f3n del puente</label><input id="cu" value="${cfg.url.replace(/"/g,'&quot;')}" placeholder="https://script.google.com/macros/s/.../exec" autocomplete="off">
     <label class="f" for="ck">Clave</label><input id="ck" value="${cfg.clave.replace(/"/g,'&quot;')}" autocomplete="off">
@@ -1716,6 +1908,7 @@ function hojaAjustes(){
     <div class="acciones"><button id="no">Cerrar</button><button class="ok" id="gu">Guardar avisos</button></div>`,()=>{
       const leerCfg = ()=>{ cfg.url=$('#cu').value.trim(); cfg.clave=$('#ck').value.trim(); try{ localStorage.setItem(CFG, JSON.stringify(cfg)); }catch(e){} };
       $('#no').onclick=()=>cerrarHoja();
+      $('#nv').onclick=hojaNovedades;
       $('#gc').onclick=()=>{
         leerCfg();
         if(!/^https:\/\/script\.google\.com\/macros\/s\/.+\/exec$/.test(cfg.url)){ $('#err').textContent='La direcci\u00f3n debe empezar por https://script.google.com/macros/s/ y acabar en /exec.'; return; }
@@ -1734,7 +1927,7 @@ function hojaAjustes(){
               const j = await llamar({accion:'leer'});
               if(!j.estado){ $('#err3').textContent='La hoja todav\u00eda no tiene datos guardados.'; $('#si2').disabled=false; return; }
               S = j.estado;
-              try{ localStorage.setItem(CLAVE, JSON.stringify(S)); }catch(e){}
+              migrar();
               sync.pendiente=false; sync.error=null; sync.ultimo=Date.now(); guardarSync();
               cerrarHoja(); seccion='inicio'; pintar(); pintarSync(); toast('Datos recuperados');
             }catch(e){ $('#err3').textContent='No se ha podido: '+(e.message||e); $('#si2').disabled=false; }
@@ -1765,6 +1958,12 @@ pintarSync();
 if(navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(()=>{});
 if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
 if(sync.pendiente) setTimeout(subir, 1500);
+try{
+  if(localStorage.getItem('mant-app-version')!==VERSION_APP){
+    localStorage.setItem('mant-app-version', VERSION_APP);
+    setTimeout(hojaNovedades, 400);
+  }
+}catch(e){}
 </script>
 </body>
 </html>
