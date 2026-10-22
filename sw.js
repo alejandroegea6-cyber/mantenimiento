@@ -1,5 +1,5 @@
 // Service worker: permite abrir la app sin cobertura.
-const VERSION = 'mant-1.2.0';
+const VERSION = 'mant-1.3.0';
 const BASICOS = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', e => {
@@ -38,4 +38,12 @@ self.addEventListener('fetch', e => {
       const copia = res.clone(); caches.open(VERSION).then(c => c.put(req, copia)); return res;
     }))
   );
+});
+
+// Al tocar la notificación de sesión abierta: abre la app (o la trae delante).
+self.addEventListener('notificationclick', e => {
+  e.waitUntil(self.clients.matchAll({type:'window', includeUncontrolled:true}).then(l => {
+    for (const c of l) { if ('focus' in c) return c.focus(); }
+    return self.clients.openWindow('./');
+  }));
 });
