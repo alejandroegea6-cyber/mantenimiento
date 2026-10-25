@@ -284,12 +284,23 @@ button.mov{cursor:pointer}
 @keyframes latido{50%{opacity:.35}}
 .ini{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;font-weight:700;font-size:17px;color:#fff;flex:none}
 .posic a{color:var(--campo)}
+.libreta.luca span{font-weight:700;font-size:15px;line-height:1}
+.nav button{position:relative}
+.nav .nb{position:absolute;top:3px;left:calc(50% + 5px);min-width:18px;height:18px;padding:0 4px;border-radius:999px;background:var(--rojo);color:#fff;font-size:11px;font-weight:700;display:grid;place-items:center;line-height:1}
+.nav .nb.y{background:var(--amarillo);color:#1F2A1F}
+.hoyl{text-align:center;font-size:14px;color:var(--text2);margin:14px 4px 0}
+.hoyl b{color:var(--text);font-weight:600}
+a.maq{color:inherit;text-decoration:none}
+.precio{font-size:14px;color:var(--text2);margin:10px 4px 0}
+.precio + .precio{margin-top:4px}
+.precio b{color:var(--text);font-weight:600}
+.mov .n .tag{margin-left:6px}
 @media (prefers-reduced-motion: reduce){*{transition:none!important}.rec{animation:none}}
 </style>
 </head>
 <body>
 <div class="app">
-  <div class="top"><span class="topizq"><span id="fecha"></span><button class="libreta" id="btnDias" type="button" aria-label="Días"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M4 10h16M9 3v4M15 3v4"/></svg></button><button class="libreta" id="btnTiempo" type="button" aria-label="El tiempo. Mantén pulsado para elegir cuál"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="9" r="3.2"/><path d="M9 2.5v1.3M2.5 9h1.3M4.4 4.4l.9.9M13.6 4.4l-.9.9"/><path d="M8.5 20h8a3.5 3.5 0 0 0 .3-7 4.8 4.8 0 0 0-9.1 1.4A2.8 2.8 0 0 0 8.5 20z"/></svg></button></span><span class="topder"><button class="libreta" id="btnNotas" type="button" aria-label="Notas de uso"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h11a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H6z"/><path d="M6 3v18M4 7h4M4 12h4M4 17h4M10 8h5M10 12h5"/></svg></button><button class="badge" id="sync" type="button">Sin conectar</button></span></div>
+  <div class="top"><span class="topizq"><span id="fecha"></span><button class="libreta" id="btnDias" type="button" aria-label="Días"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M4 10h16M9 3v4M15 3v4"/></svg></button><button class="libreta" id="btnTiempo" type="button" aria-label="El tiempo. Mantén pulsado para elegir cuál"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="9" r="3.2"/><path d="M9 2.5v1.3M2.5 9h1.3M4.4 4.4l.9.9M13.6 4.4l-.9.9"/><path d="M8.5 20h8a3.5 3.5 0 0 0 .3-7 4.8 4.8 0 0 0-9.1 1.4A2.8 2.8 0 0 0 8.5 20z"/></svg></button><button class="libreta luca" id="btnLuca" type="button" aria-label="Abrir Luca"><span aria-hidden="true">L</span></button></span><span class="topder"><button class="libreta" id="btnNotas" type="button" aria-label="Notas de uso"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h11a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H6z"/><path d="M6 3v18M4 7h4M4 12h4M4 17h4M10 8h5M10 12h5"/></svg></button><button class="badge" id="sync" type="button">Sin conectar</button></span></div>
   <main id="vista"></main>
 </div>
 
@@ -329,7 +340,7 @@ const SECCIONES = [
 
 const H = 3600000;
 const CLAVE = 'mant-app-v1';
-const VERSION_APP = '1.4.1.2';
+const VERSION_APP = '1.4.1.3';
 
 function estadoInicial(){
   return {
@@ -385,7 +396,7 @@ const apero = id => S.aperos.find(a=>a.id===id);
 const esCompat = (a,tid) => !!a && (a.compatTodos || (a.compat||[]).includes(tid));
 const fmtH = h => (Math.round(h*10)/10).toLocaleString('es-ES',{maximumFractionDigits:1});
 function dur(ms){ ms=Math.max(0,ms); const s=Math.floor(ms/1000); const h=Math.floor(s/3600), m=Math.floor(s%3600/60), x=s%60; return [h,m,x].map(n=>String(n).padStart(2,'0')).join(':'); }
-function toast(t){ const el=$('#toast'); el.textContent=t; el.classList.add('on'); clearTimeout(toast.k); toast.k=setTimeout(()=>el.classList.remove('on'),2200); }
+function toast(t, ms){ const el=$('#toast'); el.textContent=t; el.classList.add('on'); clearTimeout(toast.k); toast.k=setTimeout(()=>el.classList.remove('on'), ms||2200); }
 
 function cuentaEnTramo(m, tramo){
   if(m.reloj!=='trabajo') return false;
@@ -765,7 +776,8 @@ function hojaStop(){
         delete ses.pausa;
         ses.fin = ses.tramos[ses.tramos.length-1].fin;
         S.sesiones.push(ses); S.sesion = null;
-        guardar(); cerrarHoja(); pintar(); toast('Sesión guardada');
+        const trab = ses.tramos.reduce((x,t)=>x+Math.max(0,t.fin-t.inicio),0);
+        guardar(); cerrarHoja(); pintar(); toast(`Sesión cerrada: ${durTxt(trab)} trabajadas`, 4000);
         registrarPos(ses.tramos[ses.tramos.length-1], null, p=>{ if(p) ses.posStop = p; apuntarDondeQueda(ses.tractor, p); avisosGranja(ses, p); });
       };
   });
@@ -903,7 +915,9 @@ function hojaRepostar(){
 /* ---------- vistas ---------- */
 let seccion = 'inicio';
 function pintarNav(){
-  $('#nav').innerHTML = SECCIONES.map(([id,txt,ic])=>`<button data-s="${id}" class="${id===seccion?'act':''}" ${id===seccion?'aria-current="page"':''}>${ic}<span>${txt}</span></button>`).join('');
+  const nav = cuentaAvisos();
+  $('#nav').innerHTML = SECCIONES.map(([id,txt,ic])=>{ const nb = id==='notif' && nav.n ? `<span class="nb ${nav.r?'':'y'}">${nav.n}</span>` : '';
+    return `<button data-s="${id}" class="${id===seccion?'act':''}" ${id===seccion?'aria-current="page"':''} ${nb?`aria-label="${txt}, ${nav.n}"`:''}>${ic}<span>${txt}</span>${nb}</button>`; }).join('');
   $('#nav').querySelectorAll('button').forEach(b=>b.onclick=()=> b.dataset.s==='ajustes' ? hojaAjustes() : irA(b.dataset.s));
   const bd = $('#btnDias'); if(bd){ bd.classList.toggle('act', seccion==='dias'); if(seccion==='dias') bd.setAttribute('aria-current','page'); else bd.removeAttribute('aria-current'); }
 }
@@ -949,6 +963,7 @@ function pintarInicio(){
       </div>
       <button class="btn campo ${modo==='campo'?'on':''} ${modo==='carretera'?'tenue':''}" id="bf" aria-pressed="${modo==='campo'}">${I.campo}Campo</button>
     </div>
+    <div class="hoyl" id="hoyl" aria-live="off"></div>
     <button class="salir" id="bsal">${I.tool}Antes de salir${rutinaPendiente(t)?'<span class="pto" aria-label="Rutina de hoy sin hacer"></span>':''}</button>
     <div class="rapidos">
       <button class="chip" id="bh">${I.cam}Horómetro</button>
@@ -968,6 +983,7 @@ function pintarInicio(){
   $('#bcod').onclick=hojaCodigo;
   if($('#bcampo')) $('#bcampo').onclick=hojaElegirCampo;
   $('#bsal').onclick=()=>irA('salir');
+  pintarHoy();
   document.querySelectorAll('[data-taller]').forEach(b=>b.onclick=()=>hojaTaller(b.dataset.taller));
   tic();
 }
@@ -1022,6 +1038,7 @@ function pintarFicha(){
   } else {
     datos = `<dt>Tipo</dt><dd>${TIPOS[x.tipo]}</dd>
       <dt>Trabajo</dt><dd>${fmtH(horasTrabajo(id))} h</dd>
+      <dt>Última vez</dt><dd>${textoUltimaApero(id)}</dd>
       <dt>Compatible con</dt><dd>${x.compatTodos ? 'Todos los tractores' : (x.compat||[]).map(t=>tractor(t)?.nombre).filter(Boolean).join(', ')}</dd>`;
   }
   const ms = S.mants.filter(m=>m.maq===id).map(info).sort(porUrgencia);
@@ -1151,6 +1168,7 @@ function hojaEditarMant(id){
     <label class="f" for="mi">Cada cuántas horas</label>${campoNumero('mi', m.intervalo??undefined)}
     <label class="f" for="mm">O cada cuántos meses (opcional)</label><input id="mm" type="number" inputmode="numeric" min="1" step="1" placeholder="Sin límite por tiempo" value="${m.meses??''}">
     ${segQuien(m.quien)}
+    ${trab ? `<label class="f" for="mc">Cuándo cuentan las horas</label><select id="mc">${opsCuenta(tipoDe(m.maq)).map(([v,x])=>`<option value="${v}" ${v===(m.cuenta||'campo')?'selected':''}>${x}</option>`).join('')}</select><p class="nota" style="margin-top:2px">Si la cambias, lo ya contado se queda y desde ahora cuenta con la nueva.</p>` : ''}
     ${trab && t ? `<label class="f" for="mh">Según el manual, cada (h de horómetro)</label>${campoNumero('mh', m.manualH??undefined)}` : ''}
     <label class="f" for="mo">Referencia del manual (opcional)</label><input id="mo" value="${esc(m.nota)}">
     <label class="f" for="md">Detalles (opcional)</label><textarea id="md" rows="4">${esc(m.detalles)}</textarea>
@@ -1173,13 +1191,27 @@ function hojaEditarMant(id){
       if(!trab && t && u!=null && u>t.horometro) return err(`No puede ser mayor que el horómetro actual (${fmtH(t.horometro)} h).`);
       const f = fechaDe($('#mf').value);
       if(f > Date.now()+60000) return err('La fecha no puede ser futura.');
-      m.nombre=n; m.intervalo=iv; m.meses=me.v; m.quien=valSeg('#mq'); m.nota=$('#mo').value.trim(); m.detalles=$('#md').value.trim(); m.fecha=f;
+      const q=valSeg('#mq'), mo=$('#mo').value.trim(), md=$('#md').value.trim(), nc=$('#mc')?$('#mc').value:null;
+      const aplicar = ()=>{
+      m.nombre=n; m.intervalo=iv; m.meses=me.v; m.quien=q; m.nota=mo; m.detalles=md; m.fecha=f;
+      if(trab && nc && nc!==(m.cuenta||'campo')){
+        /* lo que llevaba el tramo abierto se cuenta con la regla vieja; desde ahora, con la nueva */
+        const tr = S.sesion && S.sesion.tramos[S.sesion.tramos.length-1];
+        if(tr && !tr.fin && cuentaEnTramo(m,tr)) m.acum += Math.max(0,(Date.now()-Math.max(tr.inicio, m.desde||0))/H);
+        m.desde = Date.now(); m.cuenta = nc;
+      }
       if(trab){
         if(u!=null && Math.abs(u-acumVis)>0.05){ m.acum=u; m.desde=Date.now(); if(t) m.ultimaHoro=Math.max(0,t.horometro-u); }
         if(t){ m.manualH = mh||null; if(m.manualH && m.ultimaHoro==null) m.ultimaHoro=Math.max(0,t.horometro-m.acum); }
       } else if(u!=null) m.ultima=u;
       else if(m.ultima==null && t) m.ultima=t.horometro;
       guardar(); cerrarHoja(); pintar(); toast('Mantenimiento actualizado');
+      };
+      if(trab && nc && nc!==(m.cuenta||'campo')){
+        const ops = Object.fromEntries(opsCuenta(tipoDe(m.maq)));
+        abrirHoja(`<h3>¿Cambiar cuándo cuentan las horas?</h3><p>${esc(m.nombre)}: de «${esc(ops[m.cuenta||'campo']||m.cuenta)}» a «${esc(ops[nc])}». Lo ya contado se queda; desde ahora cuenta con la nueva.</p><div class="acciones"><button id="no3">Cancelar</button><button class="ok" id="si3">Cambiar</button></div>`,()=>{
+          $('#no3').onclick=()=>cerrarHoja(); $('#si3').onclick=aplicar; });
+      } else aplicar();
     };
     $('#del').onclick=()=>abrirHoja(`<h3>¿Borrar ${esc(m.nombre)}?</h3><p>Deja de contar y desaparece de los avisos. El historial de veces que se hizo se conserva.</p><div class="acciones"><button id="no2">Cancelar</button><button class="peligro" id="si2">Borrar</button></div>`,()=>{
       $('#no2').onclick=()=>cerrarHoja();
@@ -1316,7 +1348,7 @@ function pintarDia(){
       const txt=`${nombreModo(x.t.modo)}, ${nombreApero(x.t.apero)}<br>${hora(x.a)} a ${x.i===-1&&x.t.fin>=Date.now()-1000?'ahora':hora(x.b)} (${durTxt(x.t.fin-x.t.inicio)})${x.partida?' (sesión partida)':''}`;
       html += `<button class="blk ${x.t.modo} ${x.i===-1?'abierta':''}" data-i="${x.i}" style="top:${top+1}px;height:${alto}px">${txt}</button>`;
     });
-    cuerpo = `<div class="agenda" style="height:${(hFin-hIni)*PX+8}px">${html}</div>`;
+    cuerpo = `${resumenDia(bloques)}<div class="agenda" style="height:${(hFin-hIni)*PX+8}px">${html}</div>`;
   }
   $('#vista').innerHTML = `<div class="mes"><button class="flecha" id="pd" aria-label="Día anterior">${FL.izq}</button><h2>${titulo}</h2><button class="flecha" id="sd" aria-label="Día siguiente">${FL.der}</button></div>${cuerpo}<p class="pista">Toca un tramo para ver y corregir su sesión. Para volver al calendario, usa atrás.</p>`;
   $('#pd').onclick=()=>{ diaSel=sumarDias(diaSel,-1); pintarDias(); };
@@ -1512,6 +1544,7 @@ function pintarComb(){
       <button class="chip" id="bpd">Pedido a domicilio</button>
       ${C.iniciado?`<button class="chip" id="bot">Otra salida del depósito</button>`:''}
     </div>
+    ${textoPrecios()}
     <section class="hist"><h2>Historial</h2><div class="lista">${items.length?items.map(fila).join(''):'<div class="vacio" style="padding:16px">Todavía no hay repostajes. Empieza con el botón Repostar.</div>'}</div></section>`;
   if($('#bi')) $('#bi').onclick=hojaInicioDeposito;
   $('#brp').onclick=hojaRepostar;
@@ -2055,6 +2088,7 @@ function pintar(){
   else if(seccion==='averias') pintarAverias();
   else if(seccion==='campos') pintarCampos();
   else if(seccion==='notas') pintarNotas();
+  else if(seccion==='notif') pintarAvisos();
   else {
     const nom = SECCIONES.find(s=>s[0]===seccion)[1];
     $('#vista').innerHTML = `<div class="prox"><h2 style="font-weight:500;color:var(--text)">${nom}</h2><p>Esta sección la construiremos en los siguientes pasos.</p></div>`;
@@ -2075,6 +2109,7 @@ function tic(){
     if(ms/H >= S.umbralLarga){ l.style.display='block'; l.textContent=`La sesión lleva más de ${S.umbralLarga} h abierta. ¿Se te olvidó pararla?`; }
     else l.style.display='none';
   } else r.textContent='00:00:00';
+  if(S.sesion && new Date().getSeconds()%15===0) pintarHoy();
 }
 setInterval(tic, 1000);
 
@@ -2374,10 +2409,13 @@ function pintarCampos(){
   const fila = c => {
     const rs = ritmosCampo(c.id).filter(r=>r.haH);
     const sub = rs.length ? rs.slice(0,2).map(r=>`${esc(nombreApero(r.apero))} ${fmtRitmo(r.haH)}`).join(' · ') : 'Sin datos de trabajo todavía';
-    return `<button class="maq" data-c="${c.id}"><span class="ico t">${I.parcela}</span><span><span class="n">${esc(c.nombre)}</span><br><span class="s">${fmtHa(c.ha)} ha · ${sub}</span></span></button>`;
+    const u = ultimaCampo(c.id);
+    return `<button class="maq" data-c="${c.id}"><span class="ico t">${I.parcela}</span><span><span class="n">${esc(c.nombre)}</span><br><span class="s">${fmtHa(c.ha)} ha · ${u ? (u.enCurso ? 'ahora' : hace(u.fin)) : 'nunca con la app'} · ${sub}</span></span></button>`;
   };
   $('#vista').innerHTML = `<h2 class="secc" style="margin-top:6px">${S.campos.length} campos, ${fmtHa(tot)} ha</h2>
     <section class="maquinas">${S.campos.map(fila).join('')}</section>
+    <h2 class="secc">Lugares</h2>
+    <section class="maquinas">${(S.lugares||[]).map(filaLugar).join('')}</section>
     <p class="nota">Contornos: SIGPAC, Fondo Español de Garantía Agraria (FEGA), licencia CC BY 4.0. Pueblos de las ubicaciones aproximadas: © colaboradores de OpenStreetMap (ODbL).</p>`;
   document.querySelectorAll('[data-c]').forEach(b=>b.onclick=()=>{ campoFicha=b.dataset.c; history.pushState({s:'campos'},''); pintar(); });
 }
@@ -2388,13 +2426,14 @@ function pintarFichaCampo(){
   const rec = c.recintos.map(k=>{ const [,mu,,,po,pa,re]=k.split('/'); const g=GEO[k]; return `<div class="cambio"><span>${MUNIS[mu]||'Municipio '+mu}, pol. ${po}, parc. ${pa}, rec. ${re}</span><span class="s">${g?fmtHa(g.s)+' ha':''}</span></div>`; }).join('');
   const rs = ritmosCampo(c.id);
   $('#vista').innerHTML = `<div class="mes"><button class="flecha" id="vb" aria-label="Volver a Campos">${FL.izq}</button><h2>${esc(c.nombre)}</h2><button class="flecha" id="ren" aria-label="Cambiar nombre"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg></button></div>
-    <section class="dep"><dl class="det" style="margin:0"><dt>Superficie</dt><dd>${fmtHa(c.ha)} ha</dd><dt>Mapa</dt><dd class="posic">${ctr?`<a href="${mapa(ctr)}" target="_blank" rel="noopener">Ver en Google Maps</a>`:'—'}</dd></dl>
+    <section class="dep"><dl class="det" style="margin:0"><dt>Superficie</dt><dd>${fmtHa(c.ha)} ha</dd><dt>Mapa</dt><dd class="posic">${ctr?`<a href="${mapa(ctr)}" target="_blank" rel="noopener">Ver en Google Maps</a>`:'—'}</dd><dt>Última vez</dt><dd>${textoUltimaCampo(c.id)}</dd><dt>Nota</dt><dd class="txt">${c.nota?esc(c.nota):'<span style="color:var(--text2)">Sin nota</span>'}<br><button class="chip" id="bnota" style="margin-top:8px">${c.nota?'Cambiar la nota':'Escribir una nota'}</button></dd></dl>
       <p class="peq" style="margin-top:14px">Recintos SIGPAC</p>${rec}</section>
     <h2 class="secc">Hectáreas por hora</h2>
     <div class="lista">${rs.length ? rs.map(r=>filaRitmo(nombreApero(r.apero), r)).join('') : '<div class="vacio" style="padding:14px">Todavía no has trabajado este campo con la app.</div>'}</div>
     <p class="nota">Un rato de menos del 80 % de lo normal para este campo y este apero queda a medias y no cuenta. Si vuelves antes de 30 días con el mismo apero, la app te pregunta si sigues con lo de entonces y junta los ratos.</p>`;
   $('#vb').onclick=()=>history.back();
   $('#ren').onclick=()=>hojaRenombrarCampo(c.id);
+  $('#bnota').onclick=()=>hojaNotaCampo(c.id);
 }
 function hojaRenombrarCampo(id){
   const c = campo(id);
@@ -2552,8 +2591,154 @@ function hojaNota(id){
 }
 $('#btnNotas').onclick=abrirNotas;
 
+/* ---------- 1.4.1.3: pijadicas ---------- */
+const LUCA_URL = 'https://app.lucabysowify.com/';
+$('#btnLuca').onclick = ()=>window.open(LUCA_URL, '_blank', 'noopener');
+
+/* horas trabajadas entre dos instantes, por modo (los tramos partidos cuentan solo su parte) */
+function horasEntre(d0, d1){
+  const por = {campo:0, carretera:0, nose:0};
+  todasSesiones().forEach(({s})=>s.tramos.forEach(t=>{
+    const a=Math.max(t.inicio,d0), b=Math.min(t.fin,d1);
+    if(b>a){ const k = por[t.modo]!=null ? t.modo : 'carretera'; por[k]+=b-a; }
+  }));
+  por.total = por.campo+por.carretera+por.nose;
+  return por;
+}
+function frasePartes(p){
+  const l = [];
+  if(p.campo>=60000) l.push(`${durTxt(p.campo)} en campo`);
+  if(p.carretera>=60000) l.push(`${durTxt(p.carretera)} en carretera`);
+  if(p.nose>=60000) l.push(`${durTxt(p.nose)} sin saber`);
+  return l.length>1 ? l.slice(0,-1).join(', ')+' y '+l[l.length-1] : (l[0]||'');
+}
+/* Inicio: lo que llevas hoy, también de las sesiones ya cerradas */
+function pintarHoy(){
+  const el = $('#hoyl'); if(!el) return;
+  const d0 = inicioDia(Date.now()), p = horasEntre(d0, Date.now());
+  if(p.total < 60000){ el.innerHTML = ''; el.style.display='none'; return; }
+  el.style.display='';
+  el.innerHTML = `Hoy llevas <b>${durTxt(p.total)}</b>: ${frasePartes(p)}`;
+}
+/* Días: total del día, arriba de la agenda */
+function resumenDia(bl){
+  const por = {campo:0, carretera:0, nose:0};
+  bl.forEach(x=>{ const k = por[x.t.modo]!=null ? x.t.modo : 'carretera'; por[k]+=x.b-x.a; });
+  const tot = por.campo+por.carretera+por.nose;
+  const partes = [['campo','Campo',por.campo],['carretera','Carretera',por.carretera]];
+  if(por.nose) partes.push(['nose','Sin saber',por.nose]);
+  return `<div class="resu" aria-label="Horas del día"><div class="tot"><span class="v">${durTxt(tot)}</span><br><span class="k">Total trabajado este día</span></div><div class="partes" style="grid-template-columns:repeat(${partes.length},1fr)">${partes.map(([c,k,v])=>`<div class="${c}"><span class="v">${durTxt(v)}</span><br><span class="k">${k}</span></div>`).join('')}</div></div>`;
+}
+
+/* última vez: el tramo más reciente que cumple la condición, con su sesión */
+function ultimoTramo(cond){
+  let m = null;
+  todasSesiones().forEach(({s,i})=>s.tramos.forEach(t=>{ if(cond(t) && (!m || t.fin>m.t.fin)) m={s,t,enCurso:i===-1}; }));
+  return m;
+}
+const fechaLarga = ms => { const d=new Date(ms), mismo=d.getFullYear()===new Date().getFullYear(); return d.toLocaleDateString('es-ES', mismo?{day:'numeric',month:'long'}:{day:'numeric',month:'long',year:'numeric'}); };
+function hace(ms){
+  const n = Math.round((inicioDia(Date.now()) - inicioDia(ms))/DIA);
+  return n<=0 ? 'hoy' : n===1 ? 'ayer' : `hace ${n} días`;
+}
+const cuando = ms => { const h=hace(ms); return h==='hoy'?'Hoy':h==='ayer'?'Ayer':`${fechaLarga(ms)} (${h})`; };
+function ultimaCampo(cid){
+  const u = ultimoTramo(t=>t.modo==='campo' && t.campo===cid);
+  if(!u) return null;
+  const ms = u.s.tramos.filter(t=>t.modo==='campo' && t.campo===cid).reduce((x,t)=>x+Math.max(0,t.fin-t.inicio),0);
+  return {fin:u.t.fin, apero:u.t.apero, ms, enCurso:u.enCurso};
+}
+function textoUltimaCampo(cid){
+  const u = ultimaCampo(cid);
+  if(!u) return 'Todavía no lo has trabajado con la app';
+  return `${u.enCurso ? 'Ahora' : cuando(u.fin)}, con ${esc(nombreApero(u.apero))}, ${durTxt(u.ms)}`;
+}
+function textoUltimaApero(aid){
+  const u = ultimoTramo(t=>t.apero===aid);
+  if(!u) return 'Todavía no lo has usado con la app';
+  const suyos = u.s.tramos.filter(t=>t.apero===aid);
+  const ms = suyos.reduce((x,t)=>x+Math.max(0,t.fin-t.inicio),0);
+  const enCampo = suyos.filter(t=>t.modo==='campo' && ((t.campo && campo(t.campo)) || (t.lugar && lugar(t.lugar))));
+  const donde = enCampo.length ? 'en '+unicos(enCampo.map(sitioTramo)).map(esc).join(', ') : 'en carretera';
+  return `${u.enCurso ? 'Ahora' : cuando(u.t.fin)}, ${donde}, ${durTxt(ms)}`;
+}
+
+/* Campos: lugares al final de la lista, con su mapa */
+function filaLugar(l){
+  const ctr = l.centro || (l.recintos ? centroCampo(l) : null);
+  const tam = l.centro ? `círculo de ${Math.round(l.radio*2)} m` : `${fmtHa(l.recintos.reduce((x,k)=>x+(GEO[k]?GEO[k].s:0),0))} ha`;
+  const u = ultimoTramo(t=>t.lugar===l.id);
+  const aqui = !S.sesion ? S.tractores.filter(t=>t.dondeQueda && t.dondeQueda.lugar===l.id).map(t=>t.nombre) : [];
+  const partes = [tam, u ? (u.enCurso ? 'ahora' : hace(u.t.fin)) : null, aqui.length ? `aquí está ${aqui.map(esc).join(' y ')}` : null].filter(Boolean);
+  const dentro = `<span class="ico a">${I.home}</span><span><span class="n">${esc(l.nombre)}</span><br><span class="s">${partes.join(' · ')}${ctr?' · ver en el mapa':''}</span></span>`;
+  return ctr ? `<a class="maq" href="${mapa(ctr)}" target="_blank" rel="noopener">${dentro}</a>` : `<div class="maq">${dentro}</div>`;
+}
+function hojaNotaCampo(id){
+  const c = campo(id);
+  abrirHoja(`<h3>Nota de ${esc(c.nombre)}</h3><p>Lo que quieras recordar de este campo: entradas, piedras, zonas húmedas…</p>
+    <textarea id="tn" rows="5" placeholder="Entrada por el camino de abajo">${esc(c.nota||'')}</textarea>
+    <div class="acciones"><button id="no">Cancelar</button><button class="ok" id="si">Guardar</button></div>`,()=>{
+      $('#no').onclick=()=>cerrarHoja();
+      $('#si').onclick=()=>{ const v=$('#tn').value.trim(); if(v) c.nota=v; else delete c.nota; guardar(); cerrarHoja(); pintar(); toast(v?'Nota guardada':'Nota quitada'); };
+  });
+}
+
+/* Combustible: precio del último gasoil y del último AdBlue, comparado con la compra anterior */
+function textoPrecios(){
+  const compras = prod => {
+    const l = S.repostajes.filter(r=>r.producto===prod && r.origen!=='dep' && r.importe>0 && r.litros>0).map(r=>({f:r.fecha, p:r.importe/r.litros, d:'cooperativa'}));
+    if(prod==='gasoil') S.deposito.movs.filter(m=>(m.tipo==='compra'||m.tipo==='inicio') && m.importe>0 && m.litros>0).forEach(m=>l.push({f:m.fecha, p:m.importe/m.litros, d:'pedido a la bajera'}));
+    return l.sort((a,b)=>b.f-a.f);
+  };
+  const linea = (nom, l) => {
+    if(!l.length) return '';
+    const [u, ant] = l, dif = ant ? Math.round((u.p-ant.p)*100) : 0;
+    const cmp = !ant ? '' : dif===0 ? ', igual que la vez anterior' : `, ${Math.abs(dif)} ${Math.abs(dif)===1?'céntimo':'céntimos'} ${dif>0?'más':'menos'} que la vez anterior`;
+    return `<p class="precio">${nom}: <b>${eurL(u.p)}</b> (${fechaLarga(u.f)}, ${u.d})${cmp}</p>`;
+  };
+  return linea('Último gasoil', compras('gasoil')) + linea('Último AdBlue', compras('adblue'));
+}
+
+/* Avisos: todo lo amarillo y rojo de todas las máquinas, también lo del taller, por cuándo toca */
+const maqExiste = id => !!(tractor(id) || apero(id));
+const listaAvisos = () => S.mants.filter(m=>maqExiste(m.maq)).map(info).filter(x=>x.e || marcaM(x.m));
+function cuentaAvisos(){ const l = listaAvisos(); return {n:l.length, r:l.some(x=>x.e==='r')}; }
+/* horas al día que ha trabajado una máquina en los últimos 30 días */
+function ritmoDiario(id){
+  const d0 = Date.now()-30*DIA, esT = !!tractor(id); let h = 0;
+  todasSesiones().forEach(({s})=>s.tramos.forEach(t=>{ if((esT ? t.tractor===id : t.apero===id) && t.fin>d0) h += (t.fin-Math.max(t.inicio,d0))/H; }));
+  return h/30;
+}
+function pintarAvisos(){
+  const rit = {};
+  const l = listaAvisos().map(x=>{
+    const rd = rit[x.m.maq] ?? (rit[x.m.maq] = ritmoDiario(x.m.maq));
+    let dh = Infinity;
+    if(isFinite(x.r)) dh = x.r<0 ? (rd>0 ? x.r/rd : -1e6+x.r) : (rd>0 ? x.r/rd : Infinity);
+    x.dias = Math.min(dh, x.d); x.porHoras = dh < x.d && isFinite(dh) && x.r>=0 && rd>0;
+    x.g = x.e==='r' ? 0 : x.e==='y' ? 1 : 2;
+    return x;
+  }).sort((a,b)=> a.g-b.g || (a.dias===b.dias ? (a.r-b.r)||porUrgencia(a,b) : a.dias-b.dias));
+  const fila = x => `<button class="mov" data-m="${x.m.id}" style="align-items:center"><span class="dot ${x.e||'n'}"></span>${marcaM(x.m)?'<span class="mk" title="Según el manual ya tocaría">M</span>':''}<span class="fx"><span class="n">${esc(x.m.nombre)}${x.m.quien==='taller'?'<span class="tag">Taller</span>':''}</span><span class="s" style="font-size:13px;color:var(--text2)">${esc(nombreMaq(x.m.maq))}${x.porHoras?`, unos ${fmtDias(x.dias)} a tu ritmo`:''}${!x.e&&marcaM(x.m)?', manual: le tocaría ya':''}</span></span><span class="der">${textoMant(x.m)}</span></button>`;
+  const r = l.filter(x=>x.e==='r').length, y = l.filter(x=>x.e==='y').length;
+  $('#vista').innerHTML = `<h2 class="secc" style="margin-top:6px">${l.length ? [r?`${r} ${r===1?'pasado':'pasados'}`:'', y?`${y} a punto`:'', l.length-r-y?`${l.length-r-y} con M`:''].filter(Boolean).join(', ') : 'Avisos'}</h2>
+    <div class="lista">${l.length ? l.map(fila).join('') : '<div class="vacio" style="padding:16px">Todo al día en todas tus máquinas.</div>'}</div>
+    <p class="nota">Todas tus máquinas y aperos, también lo del taller. Primero lo pasado y después lo que está a punto, por cuándo toca: lo que va por horas se calcula con lo que has trabajado esa máquina en los últimos 30 días. Toca uno para verlo.</p>`;
+  document.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>hojaDetalle(b.dataset.m));
+}
+
 /* ---------- novedades de la versión ---------- */
 const NOVEDADES = [
+  'Avisos (menú de abajo): todo lo pasado y lo que está a punto de todas tus máquinas, también lo del taller, por cuándo toca. La campana lleva un numerito.',
+  'Inicio: debajo de los botones, lo que llevas trabajado hoy. Al pulsar STOP, el aviso dice lo trabajado en la sesión.',
+  'Días: arriba de la agenda, el total del día, con campo y carretera.',
+  'Campos: cuándo trabajaste cada campo por última vez y una nota para cada uno. Al final de la lista, la granja, la bajera y Ayesa, con su mapa.',
+  'Ficha de cada apero: cuándo y dónde se usó por última vez.',
+  'Combustible: precio del último gasoil y del último AdBlue, comparado con la vez anterior.',
+  'Editar mantenimiento: ya se puede cambiar cuándo cuentan las horas.',
+  'Botón L arriba, al lado del tiempo: abre Luca.'
+];
+const NOVEDADES_1412 = [
   'Días: si pulsas Carretera fuera de un campo o lugar (porque se te olvidó darle al salir), el viaje sale desde el último sitio donde estuviste.',
   'Si paras fuera de tus campos y lugares, en Días sale una ubicación aproximada: el pueblo más cercano (hace falta internet) o, mientras tanto, la distancia a tu campo o lugar más cercano.',
   'Días: cada tramo enseña también cuánto duró.'
