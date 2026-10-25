@@ -266,6 +266,7 @@ button.mov{cursor:pointer}
 .resu .v{font-weight:600;font-variant-numeric:tabular-nums}
 .resu .partes .v{font-size:15px}
 .resu .k{font-size:13px;color:var(--text2)}
+.tramo .der .dur{font-size:13px;color:var(--text2);font-weight:600}
 .notas{display:flex;flex-direction:column;gap:8px}
 .burbuja{align-self:flex-end;max-width:88%;background:var(--campo-bg);color:var(--text);border:0;border-radius:16px 16px 4px 16px;padding:10px 12px;text-align:left;font:inherit;cursor:pointer;white-space:pre-line}
 .burbuja.hecha{background:var(--card);border:1px solid var(--line);color:var(--text2)}
@@ -328,7 +329,7 @@ const SECCIONES = [
 
 const H = 3600000;
 const CLAVE = 'mant-app-v1';
-const VERSION_APP = '1.4.1.1';
+const VERSION_APP = '1.4.1.2';
 
 function estadoInicial(){
   return {
@@ -1312,7 +1313,7 @@ function pintarDia(){
     for(let h=hIni; h<=hFin; h++) html += `<div class="hl" style="top:${(h-hIni)*PX}px">${String(h).padStart(2,'0')}:00</div>`;
     bloques.forEach(x=>{
       const top=((x.a-d0)/H-hIni)*PX, alto=Math.max(24,(x.b-x.a)/H*PX-2);
-      const txt=`${nombreModo(x.t.modo)}, ${nombreApero(x.t.apero)}<br>${hora(x.a)} a ${x.i===-1&&x.t.fin>=Date.now()-1000?'ahora':hora(x.b)}${x.partida?' (sesión partida)':''}`;
+      const txt=`${nombreModo(x.t.modo)}, ${nombreApero(x.t.apero)}<br>${hora(x.a)} a ${x.i===-1&&x.t.fin>=Date.now()-1000?'ahora':hora(x.b)} (${durTxt(x.t.fin-x.t.inicio)})${x.partida?' (sesión partida)':''}`;
       html += `<button class="blk ${x.t.modo} ${x.i===-1?'abierta':''}" data-i="${x.i}" style="top:${top+1}px;height:${alto}px">${txt}</button>`;
     });
     cuerpo = `<div class="agenda" style="height:${(hFin-hIni)*PX+8}px">${html}</div>`;
@@ -1349,7 +1350,7 @@ function hojaSesion(i, borrador){
   const cambiado = JSON.stringify(d)!==JSON.stringify(ses.tramos);
   const ini=d[0].inicio, fin=d[d.length-1].fin, total=d.reduce((s,t)=>s+(t.fin-t.inicio),0)/H;
   const cruza = inicioDia(ini)!==inicioDia(fin-1);
-  const lista = d.map((t,j)=>`<button class="tramo" data-j="${j}"><span class="bar ${t.modo}"></span><span>${nombreModo(t.modo)}<br><span class="s" style="font-size:13px;color:var(--text2)">${nombreApero(t.apero)}${t.modo==='campo'?', '+esc(sitioTramo(t)):rutaTramo(t)?', '+esc(rutaTramo(t)):''}</span></span><span class="der">${hora(t.inicio)} a ${hora(t.fin)}</span></button>`).join('');
+  const lista = d.map((t,j)=>`<button class="tramo" data-j="${j}"><span class="bar ${t.modo}"></span><span>${nombreModo(t.modo)}<br><span class="s" style="font-size:13px;color:var(--text2)">${nombreApero(t.apero)}${t.modo==='campo'?', '+esc(sitioTramo(t)):rutaTramo(d,j,ses)?', '+esc(rutaTramo(d,j,ses)):''}</span></span><span class="der">${hora(t.inicio)} a ${hora(t.fin)}<br><span class="dur">${durTxt(t.fin-t.inicio)}</span></span></button>`).join('');
   abrirHoja(`<h3>Sesión de ${hora(ini)} a ${hora(fin)}</h3>
     ${resumenSesion(d)}
     <p>${tractor(ses.tractor).nombre}.${cruza?' Cruza la medianoche: se ve en los dos días.':''}${cambiado?' Tienes cambios sin guardar.':''}</p>
@@ -1374,7 +1375,7 @@ function hojaTramo(i, d, j){
     <label class="f" for="tf">Termina</label><input type="datetime-local" id="tf" value="${aLocal(t.fin)}">
     <label class="f" for="ta">Apero</label><select id="ta">${opsAp(t.apero)}</select>
     <div id="cmpw" ${t.modo==='campo'?'':'style="display:none"'}><label class="f" for="tc">Campo</label><select id="tc"><option value="">Sin identificar</option>${S.campos.map(c=>`<option value="${c.id}" ${c.id===t.campo?'selected':''}>${esc(c.nombre)}</option>`).join('')}</select></div>
-    <p class="nota posic">Desde: ${textoPos(t.posIni)}<br>Hasta: ${textoPos(t.posFin)}</p>
+    <p class="nota posic">${t.modo==='carretera' ? `Desde: ${filaPos(origenTramo(d,j,ses), t.posIni)}<br>Hasta: ${filaPos(destinoTramo(d,j), t.posFin)}` : `Desde: ${textoPos(t.posIni)}<br>Hasta: ${textoPos(t.posFin)}`}</p>
     <div class="err" id="err"></div>
     <div class="acciones"><button id="no">Volver</button><button class="ok" id="si">Aplicar</button></div>
     <hr class="sep"><p class="peq">Cambio de apero dentro de este tramo</p>
@@ -2111,7 +2112,9 @@ const fmtHa = n => (n||0).toLocaleString('es-ES',{minimumFractionDigits:2, maxim
 const fmtRitmo = x => x.toLocaleString('es-ES',{minimumFractionDigits:2, maximumFractionDigits:2})+' ha/h';
 const durCorta = ms => { const mn=Math.round(ms/60000), h=Math.floor(mn/60), m=mn%60; return h ? `${h} h${m?` ${m} min`:''}` : `${m} min`; };
 const mapa = p => `https://www.google.com/maps/search/?api=1&query=${p.lat},${p.lon}`;
-const textoPos = p => p ? `${sitioDe(p)?esc(sitioDe(p))+', ':''}<a href="${mapa(p)}" target="_blank" rel="noopener">ver en el mapa</a> (a las ${hora(p.t)}${p.prec?`, precisión ${p.prec} m`:''})` : 'sin posición';
+/* nombre del sitio (último confirmado) y, si pulsaste en otro sitio, dónde pulsaste */
+const filaPos = (nombre, p) => !nombre ? textoPos(p) : (p && nombre===lugarDe(p)) ? textoPos(p) : `${esc(nombre)}. Pulsaste en: ${textoPos(p)}`;
+const textoPos = p => p ? `${lugarDe(p)?esc(lugarDe(p))+', ':''}<a href="${mapa(p)}" target="_blank" rel="noopener">ver en el mapa</a> (a las ${hora(p.t)}${p.prec?`, precisión ${p.prec} m`:''})` : 'sin posición';
 /* cada recinto: lista de polígonos; cada polígono: anillo exterior y huecos */
 function poligonos(k){ const r=GEO[k]; if(!r) return []; return r.t==='Polygon' ? [r.g] : r.g; }
 function dentroAnillo(lon, lat, ring){
@@ -2144,7 +2147,68 @@ function sitioDe(p){
   (S.lugares||[]).forEach(x=>{ const d=distLugar(p,x); if(d<=dm){ dm=d; mejor=x.nombre; } });
   return mejor;
 }
-const rutaTramo = t => { const a=sitioDe(t.posIni), b=sitioDe(t.posFin); return (a||b) ? `${a||'?'} → ${b||'?'}` : ''; };
+/* 1.4.1.2: fuera de campos y lugares, ubicación aproximada: el pueblo más cercano (OpenStreetMap, se pregunta cuando hay internet)
+   o, mientras tanto, la distancia al sitio conocido más cercano */
+const clavePueblo = p => `${(+p.lat).toFixed(3)},${(+p.lon).toFixed(3)}`;
+function cercanoConocido(p){
+  let mejor=null, dm=Infinity;
+  (S.campos||[]).forEach(x=>{ const d=distCampo(p,x); if(d<dm){ dm=d; mejor=x.nombre; } });
+  (S.lugares||[]).forEach(x=>{ const d=distLugar(p,x); if(d<dm){ dm=d; mejor=x.nombre; } });
+  return mejor ? `${fmtDist(dm)} de ${mejor}` : null;
+}
+function aproxDe(p){ if(!p || p.lat==null) return null; const n=(S.pueblos||{})[clavePueblo(p)]; return n ? `cerca de ${n}` : cercanoConocido(p); }
+const lugarDe = p => sitioDe(p) || aproxDe(p);
+/* 1.4.1.2: el "Desde" de un tramo de carretera es el último sitio confirmado: si pulsas Carretera fuera de un sitio conocido es que se olvidó darle al salir */
+const conSitio = x => x && x.modo==='campo' && ((x.campo && campo(x.campo)) || (x.lugar && lugar(x.lugar)));
+function sesionAnterior(ini, tid, excluir){ let m=null; (S.sesiones||[]).forEach(s=>{ if(s!==excluir && s.tractor===tid && s.fin<=ini && (!m || s.fin>m.fin)) m=s; }); return m; }
+function origenTramo(d, j, ses){
+  const t=d[j], s=sitioDe(t.posIni); if(s) return s;
+  const prev=d[j-1];
+  if(!prev){
+    const a = ses && sesionAnterior(t.inicio, ses.tractor, ses), u = a && a.tramos[a.tramos.length-1];
+    return (u && (sitioDe(u.posFin) || (conSitio(u) && sitioTramo(u)) || aproxDe(u.posFin))) || aproxDe(t.posIni);
+  }
+  if(t.inicio - prev.fin > 60000) return sitioDe(prev.posFin) || aproxDe(prev.posFin) || (conSitio(prev) && sitioTramo(prev)) || aproxDe(t.posIni);
+  if(conSitio(prev)) return sitioTramo(prev);
+  if(prev.modo==='carretera') return origenTramo(d, j-1, ses);
+  return aproxDe(t.posIni);
+}
+function destinoTramo(d, j){
+  const t=d[j], s=sitioDe(t.posFin); if(s) return s;
+  const nx=d[j+1], seguido = nx && nx.inicio - t.fin <= 60000;
+  if(seguido && conSitio(nx)) return sitioTramo(nx);
+  if(seguido && nx.modo==='carretera' && !t.posFin) return destinoTramo(d, j+1);
+  return aproxDe(t.posFin);
+}
+const rutaTramo = (d, j, ses) => { const a=origenTramo(d,j,ses), b=destinoTramo(d,j); return (a||b) ? `${a||'?'} → ${b||'?'}` : ''; };
+/* el pueblo se pide a OpenStreetMap (Nominatim) con internet: una petición por segundo como mucho, y solo de las posiciones fuera de sitios conocidos de los últimos 60 días */
+let buscandoPueblos = false;
+async function resolverPueblos(){
+  if(buscandoPueblos || !navigator.onLine) return;
+  buscandoPueblos = true; let cambio = false;
+  try{
+    if(!S.pueblos) S.pueblos = {};
+    const desde = Date.now()-60*86400000, pend = new Map();
+    const ver = p => { if(p && p.lat!=null && !sitioDe(p)){ const k=clavePueblo(p); if(S.pueblos[k]===undefined && !pend.has(k)) pend.set(k,p); } };
+    [...(S.sesiones||[]).filter(x=>x.fin>=desde), ...(S.sesion?[S.sesion]:[])].forEach(x=>x.tramos.forEach(t=>{ ver(t.posIni); ver(t.posFin); }));
+    let n = 0;
+    for(const [k,p] of pend){
+      if(n++ >= 20) break;
+      const ctl = new AbortController(), to = setTimeout(()=>ctl.abort(), 8000);
+      let r;
+      try{ r = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&zoom=14&accept-language=es&lat=${p.lat}&lon=${p.lon}`, {signal:ctl.signal}); }
+      catch(e){ break; } finally{ clearTimeout(to); }
+      if(!r.ok) break;
+      const a = ((await r.json())||{}).address || {};
+      S.pueblos[k] = a.village || a.hamlet || a.town || a.city || a.municipality || '';
+      cambio = true;
+      await new Promise(ok=>setTimeout(ok, 1100));
+    }
+  }catch(e){}
+  finally{ buscandoPueblos = false; if(cambio) guardar(); }
+}
+window.addEventListener('online', ()=>resolverPueblos());
+setTimeout(()=>resolverPueblos(), 4000);
 const sitioTramo = t => t.lugar && lugar(t.lugar) ? lugar(t.lugar).nombre : nombreCampo(t.campo);
 function campoEn(p){ if(!p) return null; const c=(S.campos||[]).find(c=>c.recintos.some(k=>dentroRecinto(p,k))); return c ? c.id : null; }
 function metros(a, b){ const r=Math.PI/180, x=(b.lon-a.lon)*r*Math.cos((a.lat+b.lat)/2*r), y=(b.lat-a.lat)*r; return Math.sqrt(x*x+y*y)*6371000; }
@@ -2183,6 +2247,7 @@ function registrarPos(trFin, trIni, alLeer){
     if(trIni && trIni.buscando){ delete trIni.buscando; if(p){ const c=campoEn(p); if(c) asignarCampo(trIni, c); else { const l=lugarEn(p); if(l) trIni.lugar=l; } } }
     if(alLeer) alLeer(p);
     guardar();
+    if(p && !sitioDe(p)) setTimeout(()=>resolverPueblos(), 1500);
     if(seccion==='inicio' && !hojaAbierta) pintarInicio();
   });
 }
@@ -2313,7 +2378,7 @@ function pintarCampos(){
   };
   $('#vista').innerHTML = `<h2 class="secc" style="margin-top:6px">${S.campos.length} campos, ${fmtHa(tot)} ha</h2>
     <section class="maquinas">${S.campos.map(fila).join('')}</section>
-    <p class="nota">Contornos: SIGPAC, Fondo Español de Garantía Agraria (FEGA), licencia CC BY 4.0.</p>`;
+    <p class="nota">Contornos: SIGPAC, Fondo Español de Garantía Agraria (FEGA), licencia CC BY 4.0. Pueblos de las ubicaciones aproximadas: © colaboradores de OpenStreetMap (ODbL).</p>`;
   document.querySelectorAll('[data-c]').forEach(b=>b.onclick=()=>{ campoFicha=b.dataset.c; history.pushState({s:'campos'},''); pintar(); });
 }
 function pintarFichaCampo(){
@@ -2489,6 +2554,11 @@ $('#btnNotas').onclick=abrirNotas;
 
 /* ---------- novedades de la versión ---------- */
 const NOVEDADES = [
+  'Días: si pulsas Carretera fuera de un campo o lugar (porque se te olvidó darle al salir), el viaje sale desde el último sitio donde estuviste.',
+  'Si paras fuera de tus campos y lugares, en Días sale una ubicación aproximada: el pueblo más cercano (hace falta internet) o, mientras tanto, la distancia a tu campo o lugar más cercano.',
+  'Días: cada tramo enseña también cuánto duró.'
+];
+const NOVEDADES_1411 = [
   'Botón del tiempo: AEMET y el tiempo de Google intentan abrir su app en vez de la web.',
   'Campos pasa detrás de Avisos en el menú de abajo.',
   'La app reconoce Ayesa (el casco urbano, según SIGPAC). En la bajera sigue saliendo la bajera; en el resto del pueblo, "En Ayesa". En Días, los viajes salen como "Ayesa → C. grande".',

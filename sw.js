@@ -1,5 +1,5 @@
 // Service worker: permite abrir la app sin cobertura.
-const VERSION = 'mant-1.4.1.1';
+const VERSION = 'mant-1.4.1.2';
 const BASICOS = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', e => {
