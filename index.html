@@ -137,6 +137,8 @@ label.f{display:block;font-size:14px;color:var(--text2);margin:10px 0 4px}
 .acciones button{flex:1;padding:13px;border-radius:12px;font-size:16px;font-weight:500;cursor:pointer;border:1px solid var(--line);background:none}
 .acciones .ok{background:var(--campo);border-color:var(--campo);color:var(--campo-on)}
 .acciones .peligro{background:var(--stop);border-color:var(--stop);color:#fff}
+.enlace{background:none;border:0;padding:0;color:var(--campo);text-decoration:underline;font-size:inherit;cursor:pointer}
+.chip{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 .err{color:var(--stop);font-size:14px;margin-top:6px;min-height:18px}
 .nota{font-size:13px;color:var(--text2);margin-top:8px}
 .seg{display:flex;gap:6px;margin:4px 0}
@@ -295,10 +297,29 @@ a.maq{color:inherit;text-decoration:none}
 .precio + .precio{margin-top:4px}
 .precio b{color:var(--text);font-weight:600}
 .mov .n .tag{margin-left:6px}
+/* 1.4.1.4: pantalla de carga propia, después de la de Android */
+.carga{position:fixed;inset:0;z-index:100;background:#131C13;display:grid;place-items:center;transition:opacity .3s}
+.carga svg{position:absolute;inset:0;width:100%;height:100%}
+.carga img{position:relative;width:128px;height:128px;border-radius:30px;margin-bottom:12vh;box-shadow:0 6px 24px rgba(0,0,0,.5)}
+.carga.fuera{opacity:0;pointer-events:none}
 @media (prefers-reduced-motion: reduce){*{transition:none!important}.rec{animation:none}}
 </style>
 </head>
 <body>
+<div class="carga" id="carga"><svg viewBox="0 0 400 800" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
+  <defs>
+    <linearGradient id="cgCielo" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0D130D"/><stop offset=".5" stop-color="#131C13"/><stop offset=".57" stop-color="#2A2A1A"/></linearGradient>
+    <linearGradient id="cgTierra" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1A160F"/><stop offset="1" stop-color="#2B2216"/></linearGradient>
+    <clipPath id="cgCampo"><path d="M0 452H400V800H0z"/></clipPath>
+  </defs>
+  <rect width="400" height="800" fill="url(#cgCielo)"/>
+  <path d="M0 418C60 392 120 404 175 412S290 386 400 404V460H0z" fill="#161F15"/>
+  <path d="M0 440C80 426 150 446 230 436S340 428 400 438V470H0z" fill="#1B2618"/>
+  <path d="M318 437v-14M318 425c-7-1-10-7-6-12 1-6 9-8 12-3 6 0 7 8 2 11-1 3-5 5-8 4z" fill="#141C13" stroke="#141C13" stroke-width="2"/>
+  <path d="M0 452H400V800H0z" fill="url(#cgTierra)"/>
+  <g clip-path="url(#cgCampo)" stroke="#120F0A" stroke-width="2.2" fill="none" opacity=".9"><path d="M200 452L-1400 800" /><path d="M200 452L-1330 800" /><path d="M200 452L-1260 800" /><path d="M200 452L-1190 800" /><path d="M200 452L-1120 800" /><path d="M200 452L-1050 800" /><path d="M200 452L-980 800" /><path d="M200 452L-910 800" /><path d="M200 452L-840 800" /><path d="M200 452L-770 800" /><path d="M200 452L-700 800" /><path d="M200 452L-630 800" /><path d="M200 452L-560 800" /><path d="M200 452L-490 800" /><path d="M200 452L-420 800" /><path d="M200 452L-350 800" /><path d="M200 452L-280 800" /><path d="M200 452L-210 800" /><path d="M200 452L-140 800" /><path d="M200 452L-70 800" /><path d="M200 452L0 800" /><path d="M200 452L70 800" /><path d="M200 452L140 800" /><path d="M200 452L210 800" /><path d="M200 452L280 800" /><path d="M200 452L350 800" /><path d="M200 452L420 800" /><path d="M200 452L490 800" /><path d="M200 452L560 800" /><path d="M200 452L630 800" /><path d="M200 452L700 800" /><path d="M200 452L770 800" /><path d="M200 452L840 800" /><path d="M200 452L910 800" /><path d="M200 452L980 800" /><path d="M200 452L1050 800" /><path d="M200 452L1120 800" /><path d="M200 452L1190 800" /><path d="M200 452L1260 800" /><path d="M200 452L1330 800" /><path d="M200 452L1400 800" /><path d="M200 452L1470 800" /><path d="M200 452L1540 800" /><path d="M200 452L1610 800" /><path d="M200 452L1680 800" /><path d="M200 452L1750 800" /></g>
+  <path d="M0 452H400" stroke="#2E3A22" stroke-width="1.5"/>
+</svg><img src="icon-512.png" alt="" width="128" height="128"></div>
 <div class="app">
   <div class="top"><span class="topizq"><span id="fecha"></span><button class="libreta" id="btnDias" type="button" aria-label="Días"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M4 10h16M9 3v4M15 3v4"/></svg></button><button class="libreta" id="btnTiempo" type="button" aria-label="El tiempo. Mantén pulsado para elegir cuál"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="9" r="3.2"/><path d="M9 2.5v1.3M2.5 9h1.3M4.4 4.4l.9.9M13.6 4.4l-.9.9"/><path d="M8.5 20h8a3.5 3.5 0 0 0 .3-7 4.8 4.8 0 0 0-9.1 1.4A2.8 2.8 0 0 0 8.5 20z"/></svg></button><button class="libreta luca" id="btnLuca" type="button" aria-label="Abrir Luca"><span aria-hidden="true">L</span></button></span><span class="topder"><button class="libreta" id="btnNotas" type="button" aria-label="Notas de uso"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h11a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H6z"/><path d="M6 3v18M4 7h4M4 12h4M4 17h4M10 8h5M10 12h5"/></svg></button><button class="badge" id="sync" type="button">Sin conectar</button></span></div>
   <main id="vista"></main>
@@ -340,7 +361,7 @@ const SECCIONES = [
 
 const H = 3600000;
 const CLAVE = 'mant-app-v1';
-const VERSION_APP = '1.4.1.3';
+const VERSION_APP = '1.4.1.4';
 
 function estadoInicial(){
   return {
@@ -384,6 +405,7 @@ if(!S.lugares) S.lugares = LUGARES_BASE.map(l=>JSON.parse(JSON.stringify(l)));
 LUGARES_BASE.forEach(l=>{ if(!S.lugares.some(x=>x.id===l.id)) S.lugares.push(JSON.parse(JSON.stringify(l))); });
 if(S.posActiva==null) S.posActiva = true;
 if(!S.tiempo) S.tiempo = 'windy';
+if(!S.niveles) S.niveles = [];
 /* si la app se cerró mientras buscaba el campo, la lectura se perdió */
 if(S.sesion) S.sesion.tramos.forEach(t=>{ delete t.buscando; });
 try{ localStorage.setItem(CLAVE, JSON.stringify(S)); }catch(e){}
@@ -644,6 +666,24 @@ function cerrarHoja(desdeHistorial){
   if(hojaAbierta){ hojaAbierta=false; if(!desdeHistorial){ ignorarPop=true; history.back(); } }
 }
 $('#scrim').addEventListener('click', e=>{ if(e.target.id==='scrim') cerrarHoja(); });
+/* 1.4.1.4: tecla "Siguiente" del teclado. Si hay otra casilla debajo, salta a ella; si es la última, cierra el teclado.
+   No guarda nada: para eso está el botón. En los textos largos (textarea) la tecla sigue haciendo una línea nueva. */
+const TIPOS_TECLADO = ['text','number','search','email','tel','url','password',''];
+const escribible = el => el && el.tagName==='INPUT' && TIPOS_TECLADO.includes((el.getAttribute('type')||'').toLowerCase());
+function siguienteCasilla(el){
+  const zona = el.closest('#hoja') || el.closest('#vista') || document.body;
+  const l = [...zona.querySelectorAll('input,textarea')].filter(x=>(escribible(x) || x.tagName==='TEXTAREA') && !x.disabled && !x.readOnly && x.offsetParent!==null);
+  const i = l.indexOf(el);
+  return i>=0 ? l[i+1] || null : null;
+}
+document.addEventListener('focusin', e=>{ const el=e.target; if(escribible(el)) el.setAttribute('enterkeyhint', siguienteCasilla(el) ? 'next' : 'done'); });
+document.addEventListener('keydown', e=>{
+  const el = e.target;
+  if(e.key!=='Enter' || !escribible(el) || e.isComposing) return;
+  e.preventDefault();
+  const sig = siguienteCasilla(el);
+  if(sig) sig.focus(); else el.blur();
+});
 
 function hojaTractor(){
   if(S.sesion){
@@ -766,6 +806,7 @@ function hojaStop(){
         if(!fin || isNaN(fin)){ $('#err').textContent='Indica una hora de fin.'; return; }
         if(fin <= S.sesion.inicio){ $('#err').textContent='La hora de fin debe ser posterior al inicio de la sesión.'; return; }
         if(fin > Date.now()+60000){ $('#err').textContent='La hora de fin no puede ser futura.'; return; }
+        const antes = JSON.stringify(S), marca = {};
         const ses = S.sesion;
         const quitar = tr => { if(!tr.fin) return; S.mants.forEach(m=>{ if(cuentaEnTramo(m,tr)) m.acum = Math.max(0, m.acum - Math.max(0,(tr.fin - Math.max(tr.inicio, m.desde||0))/H)); }); tr.fin=null; };
         ses.tramos.filter(t=>t.inicio >= fin).forEach(quitar);
@@ -776,9 +817,41 @@ function hojaStop(){
         delete ses.pausa;
         ses.fin = ses.tramos[ses.tramos.length-1].fin;
         S.sesiones.push(ses); S.sesion = null;
-        const trab = ses.tramos.reduce((x,t)=>x+Math.max(0,t.fin-t.inicio),0);
-        guardar(); cerrarHoja(); pintar(); toast(`Sesión cerrada: ${durTxt(trab)} trabajadas`, 4000);
-        registrarPos(ses.tramos[ses.tramos.length-1], null, p=>{ if(p) ses.posStop = p; apuntarDondeQueda(ses.tractor, p); avisosGranja(ses, p); });
+        guardar(); pintar();
+        hojaResumenStop(ses, antes, marca);
+        registrarPos(ses.tramos[ses.tramos.length-1], null, p=>{ if(marca.deshecho) return; if(p) ses.posStop = p; apuntarDondeQueda(ses.tractor, p); avisosGranja(ses, p); });
+      };
+  });
+}
+
+/* 1.4.1.4 (nota 14): resumen al pulsar STOP, con "Deshacer" durante unos segundos.
+   Deshacer solo anula el STOP: vuelve todo a como estaba justo antes (mismo modo, campo y apero), el tramo sigue abierto
+   y el tiempo hasta deshacer cuenta seguido. Se quitan la posición del STOP, dónde quedó el tractor y el aviso de la granja. */
+const SEG_DESHACER = 10;
+function hojaResumenStop(ses, antes, marca){
+  const camposT = [...new Set(ses.tramos.filter(t=>t.modo==='campo').map(t=> t.campo&&campo(t.campo) ? campo(t.campo).nombre : t.lugar&&lugar(t.lugar) ? lugar(t.lugar).nombre : null).filter(Boolean))];
+  const aperosT = [...new Set(ses.tramos.map(t=>t.apero&&apero(t.apero) ? apero(t.apero).nombre : null).filter(Boolean))];
+  let quedan = SEG_DESHACER, tm = null;
+  abrirHoja(`<h3>Sesión cerrada</h3>
+    ${resumenSesion(ses.tramos)}
+    <p style="margin-top:12px">${camposT.length ? `<b>${camposT.length>1?'Campos':'Campo'}:</b> ${camposT.map(esc).join(', ')}` : 'Sin campos identificados.'}<br>
+    ${aperosT.length ? `<b>${aperosT.length>1?'Aperos':'Apero'}:</b> ${aperosT.map(esc).join(', ')}` : 'Sin apero.'}</p>
+    <div class="acciones"><button id="desh">Deshacer (${quedan})</button><button class="ok" id="okr">Cerrar</button></div>`, ()=>{
+      const fin = ()=>{ clearInterval(tm); const b=$('#desh'); if(b) b.remove(); };
+      tm = setInterval(()=>{
+        quedan--;
+        const b = $('#desh');
+        if(!b || !hojaAbierta){ clearInterval(tm); return; }
+        if(quedan<=0) fin(); else b.textContent = `Deshacer (${quedan})`;
+      }, 1000);
+      $('#okr').onclick=()=>{ clearInterval(tm); cerrarHoja(); };
+      $('#desh').onclick=()=>{
+        clearInterval(tm);
+        if(S.sesion){ cerrarHoja(); toast('Ya hay otra sesión abierta: no se puede deshacer'); return; }
+        marca.deshecho = true;
+        try{ S = JSON.parse(antes); }catch(e){ cerrarHoja(); toast('No se ha podido deshacer'); return; }
+        guardar(); cerrarHoja(); vibrar(); pintar();
+        toast(enPausa() ? 'STOP deshecho: sigues en pausa' : `STOP deshecho: sigues en ${modoTxt(S.sesion.tramos[S.sesion.tramos.length-1].modo)}`);
       };
   });
 }
@@ -869,6 +942,7 @@ function hojaRepostar(){
       ${dep ? `<label class="f" for="a">Litros en el tractor antes</label>${campoNumero('a')}<label class="f" for="b">Litros en el tractor después</label>${campoNumero('b')}${t.capDeposito?`<button class="falla" id="lleno" type="button" style="margin-top:8px">Lo he llenado (${fmtH(t.capDeposito)} L)</button>`:''}<p class="nota">El precio se calculará con el precio medio del depósito.</p>`
             : `<label class="f" for="p">Importe total (€)</label>${campoNumero('p',undefined,'step="0.01"')}<label class="f" for="l">Litros</label>${campoNumero('l')}<p class="nota" id="pl" style="min-height:18px"></p>${prod==='gasoil'?`<label class="f" for="an">Litros en el tractor antes (opcional)</label>${campoNumero('an')}<p class="nota" style="margin-top:2px">Sirve para calcular mejor el consumo.</p>`:''}`}
       <div class="err" id="err"></div>
+      <p class="nota">Para apuntar solo los litros que le quedan al tractor, mantén pulsado Repostar.</p>
       <div class="acciones"><button id="no">Cancelar</button><button class="ok" id="si">Guardar</button></div>`, ()=>{
         enlazarCamaras();
         if($('#lleno')) $('#lleno').onclick=()=>{ $('#b').value=t.capDeposito; };
@@ -912,6 +986,55 @@ function hojaRepostar(){
   repostarEnBajera(()=>{ if(tocado || !hojaAbierta || !$('#so') || orig==='dep') return; orig='dep'; dibujar(); toast('Estás en la bajera: depósito'); });
 }
 
+/* 1.4.1.4 (nota 21): litros que quedan en el depósito del tractor, escritos a mano (mantener pulsado Repostar).
+   Se guardan solos la hora, el horómetro (última lectura), el tractor, el apero, el modo, el campo o lugar y la posición.
+   Servirán en Estadísticas (1.4.3) para el consumo por campo y apero; entre lecturas se reparte por horas. */
+function nivelActual(){
+  const tr = S.sesion && !enPausa() ? S.sesion.tramos[S.sesion.tramos.length-1] : null;
+  return {modo: !S.sesion ? null : enPausa() ? 'pausa' : tr.modo, campo: tr && tr.modo==='campo' ? (tr.campo||null) : null, lugar: tr && tr.modo==='campo' ? (tr.lugar||null) : null};
+}
+function textoNivel(n){
+  const sitio = n.campo&&campo(n.campo) ? campo(n.campo).nombre : n.lugar&&lugar(n.lugar) ? lugar(n.lugar).nombre : n.pos ? lugarDe(n.pos) : null;
+  const h = hace(n.fecha);
+  return `${fmtH(n.litros)} L, ${h==='hoy'||h==='ayer'?h:fechaLarga(n.fecha)} a las ${hora(n.fecha)}${sitio?`, ${esc(sitio)}`:''}`;
+}
+function hojaLitros(){
+  const t = tractor(S.sel.tractor); if(!t) return;
+  const ult = S.niveles.filter(n=>n.tractor===t.id).sort((a,b)=>b.fecha-a.fecha)[0];
+  abrirHoja(`<h3>Litros en el depósito del ${esc(t.nombre)}</h3>
+    <p>Lo que marca ahora el tractor. Sirve para calcular el gasto por campo y apero: cuantas más veces lo apuntes, más exacto.</p>
+    <label class="f" for="lt">Litros que quedan</label>
+    <input id="lt" type="number" inputmode="decimal" step="1" min="0">
+    ${t.capDeposito?`<button class="falla" id="lleno" type="button" style="margin-top:8px">Lleno (${fmtH(t.capDeposito)} L)</button>`:''}
+    ${ult?`<p class="nota">Última vez: ${textoNivel(ult)}. <button class="enlace" id="borrarult" type="button">Borrar esa</button></p>`:''}
+    <div class="err" id="err"></div>
+    <div class="acciones"><button id="no">Cancelar</button><button class="ok" id="si">Guardar</button></div>`, ()=>{
+      $('#no').onclick=()=>cerrarHoja();
+      $('#lt').oninput=()=>{$('#err').textContent='';};
+      if($('#lleno')) $('#lleno').onclick=()=>{ $('#lt').value=t.capDeposito; };
+      if($('#borrarult')) $('#borrarult').onclick=()=>{
+        abrirHoja(`<h3>Borrar la última lectura</h3><p>${textoNivel(ult)}. ¿La borras?</p><div class="acciones"><button id="no2">Cancelar</button><button class="peligro" id="si2">Borrar</button></div>`,()=>{
+          $('#no2').onclick=hojaLitros;
+          $('#si2').onclick=()=>{ S.niveles = S.niveles.filter(n=>n!==ult); guardar(); cerrarHoja(); toast('Lectura borrada'); };
+        });
+      };
+      $('#si').onclick=()=>{
+        const v = parseFloat(String($('#lt').value).replace(',','.'));
+        if(isNaN(v)){ $('#err').textContent='Escribe los litros que marca el tractor.'; return; }
+        if(v<0){ $('#err').textContent='Los litros no pueden ser negativos.'; return; }
+        if(t.capDeposito && v>t.capDeposito){ $('#err').textContent=`Es más de lo que cabe en el depósito (${fmtH(t.capDeposito)} L).`; return; }
+        const n = {fecha:Date.now(), tractor:t.id, apero:S.sel.apero||null, litros:v, horometro:t.horometro, ...nivelActual()};
+        S.niveles.push(n); guardar(); cerrarHoja(); toast(`${fmtH(v)} L apuntados`);
+        leerPosicion(p=>{
+          if(!p) return;
+          n.pos = p;
+          if(!n.campo && !n.lugar){ const c=campoEn(p); if(c) n.campo=c; else { const l=lugarEn(p); if(l) n.lugar=l; } }
+          guardar();
+        });
+      };
+  });
+}
+
 /* ---------- vistas ---------- */
 let seccion = 'inicio';
 function pintarNav(){
@@ -951,7 +1074,7 @@ function pintarInicio(){
     </section>
     <div class="aviso-largo" id="largo"></div>
     <div class="reloj ${S.sesion?(pausa?'enpausa':modo):'parado'}" id="reloj" aria-live="off">00:00:00</div>
-    <div class="reloj-sub ${pausa?'':modo||''}">${S.sesion ? (pausa?`En pausa desde las ${hhmm(S.sesion.pausa)}. Pulsa Campo o Carretera para seguir.`:modo==='campo'?`<button class="encampo" id="bcampo">${tr.buscando?'Buscando el campo…':tr.lugar&&lugar(tr.lugar)?`<span class="rec" aria-hidden="true"></span>${esc(enLugar(lugar(tr.lugar)))}`:tr.campo&&campo(tr.campo)?`<span class="rec" aria-hidden="true"></span>Trabajando en ${esc(campo(tr.campo).nombre)}`:'Campo sin identificar: toca para elegirlo'}</button>`:'<span class="rec" aria-hidden="true"></span>En transporte') : 'Sin sesión abierta'}</div>
+    <div class="reloj-sub ${pausa?'':modo||''}">${S.sesion ? (pausa?`En pausa desde las ${hhmm(S.sesion.pausa)}. Pulsa Campo o Carretera para seguir.`:modo==='campo'?`<button class="encampo" id="bcampo">${tr.buscando?'Buscando el campo…':tr.lugar&&lugar(tr.lugar)?`<span class="rec" aria-hidden="true"></span>${esc(enLugar(lugar(tr.lugar)))}`:tr.campo&&campo(tr.campo)?`<span class="rec" aria-hidden="true"></span>Trabajando en ${esc(campo(tr.campo).nombre)}`:tr.sug&&campo(tr.sug)?`¿Estás en ${esc(campo(tr.sug).nombre)}? Toca para confirmar`:'Campo sin identificar: toca para elegirlo'}</button>`:'<span class="rec" aria-hidden="true"></span>En transporte') : 'Sin sesión abierta'}</div>
     <div class="parciales">
       <span class="parcial carretera ${modo==='carretera'?'on':'oculto'}" ${modo==='carretera'?'id="ptr"':''} aria-label="Tiempo en este tramo de carretera">00:00:00</span><span></span><span class="parcial campo ${modo==='campo'?'on':'oculto'}" ${modo==='campo'?'id="ptr"':''} aria-label="Tiempo en este tramo de campo">00:00:00</span>
     </div>
@@ -978,10 +1101,11 @@ function pintarInicio(){
   $('#bt').onclick=hojaTractor; $('#ba').onclick=hojaApero;
   pulsacionLarga($('#bc'), ()=>pulsarModo('carretera'), ()=>hojaHora('modo','carretera'));
   pulsacionLarga($('#bf'), ()=>pulsarModo('campo'), ()=>hojaHora('modo','campo'));
-  $('#bs').onclick=hojaStop; $('#bh').onclick=hojaHorometro; $('#br').onclick=hojaRepostar;
+  $('#bs').onclick=hojaStop; $('#bh').onclick=hojaHorometro;
+  pulsacionLarga($('#br'), hojaRepostar, hojaLitros);
   pulsacionLarga($('#bp'), ()=>pausar(), ()=>hojaHora('pausa'));
   $('#bcod').onclick=hojaCodigo;
-  if($('#bcampo')) $('#bcampo').onclick=hojaElegirCampo;
+  if($('#bcampo')) $('#bcampo').onclick=hojaSugerencia;
   $('#bsal').onclick=()=>irA('salir');
   pintarHoy();
   document.querySelectorAll('[data-taller]').forEach(b=>b.onclick=()=>hojaTaller(b.dataset.taller));
@@ -1547,7 +1671,7 @@ function pintarComb(){
     ${textoPrecios()}
     <section class="hist"><h2>Historial</h2><div class="lista">${items.length?items.map(fila).join(''):'<div class="vacio" style="padding:16px">Todavía no hay repostajes. Empieza con el botón Repostar.</div>'}</div></section>`;
   if($('#bi')) $('#bi').onclick=hojaInicioDeposito;
-  $('#brp').onclick=hojaRepostar;
+  pulsacionLarga($('#brp'), hojaRepostar, hojaLitros);
   $('#bpd').onclick=()=> C.iniciado ? hojaPedido() : hojaInicioDeposito();
   if($('#bot')) $('#bot').onclick=hojaOtraSalida;
   document.querySelectorAll('[data-comp]').forEach(b=>b.onclick=()=>hojaCompletar(b.dataset.comp));
@@ -2279,7 +2403,7 @@ function registrarPos(trFin, trIni, alLeer){
   leerPosicion((p, motivo)=>{
     if(p){ if(trFin && !trFin.posFin) trFin.posFin = p; if(trIni) trIni.posIni = p; }
     else avisoSinPos(motivo);
-    if(trIni && trIni.buscando){ delete trIni.buscando; if(p){ const c=campoEn(p); if(c) asignarCampo(trIni, c); else { const l=lugarEn(p); if(l) trIni.lugar=l; } } }
+    if(trIni && trIni.buscando){ delete trIni.buscando; if(p){ const c=campoEn(p); if(c) asignarCampo(trIni, c); else { const l=lugarEn(p); if(l) trIni.lugar=l; else { const sg=sugerirCampo(p, trIni); if(sg) trIni.sug=sg; } } } }
     if(alLeer) alLeer(p);
     guardar();
     if(p && !sitioDe(p)) setTimeout(()=>resolverPueblos(), 1500);
@@ -2378,15 +2502,52 @@ function filaRitmo(nombre, r){
 }
 
 /* ---------- elegir o cambiar el campo del tramo en curso ---------- */
+/* 1.4.1.4 (nota 20): si al pulsar Campo no caes dentro de ningún campo, sugiere uno.
+   Primero, donde elegiste tú el campo otras veces (a menos de 75 m); si no, el campo más cercano a menos de 100 m. Nunca se pone sin confirmar. */
+const SUG_APR = 75, SUG_CERCA = 100;
+function sugerirCampo(p, excluir){
+  if(!p) return null;
+  const votos = {};
+  tramosTodos().forEach(t=>{
+    if(t===excluir || t.modo!=='campo' || !t.campo || !campo(t.campo) || !t.posIni) return;
+    if(campoEn(t.posIni)===t.campo) return;
+    const d = metros(p, t.posIni);
+    if(d<=SUG_APR && (!votos[t.campo] || d<votos[t.campo].d)) votos[t.campo] = {n:(votos[t.campo]?votos[t.campo].n:0)+1, d};
+    else if(d<=SUG_APR) votos[t.campo].n++;
+  });
+  const apr = Object.entries(votos).sort((a,b)=> b[1].n-a[1].n || a[1].d-b[1].d)[0];
+  if(apr) return apr[0];
+  let mejor=null, dm=SUG_CERCA;
+  (S.campos||[]).forEach(c=>{ const d=distCampo(p,c); if(d<=dm){ dm=d; mejor=c.id; } });
+  return mejor;
+}
+function hojaSugerencia(){
+  const tr = S.sesion && !enPausa() && S.sesion.tramos[S.sesion.tramos.length-1];
+  if(!tr || tr.modo!=='campo' || !tr.sug || !campo(tr.sug)) return hojaElegirCampo();
+  const c = campo(tr.sug), d = tr.posIni ? distCampo(tr.posIni, c) : null;
+  abrirHoja(`<h3>¿Estás en ${esc(c.nombre)}?</h3>
+    <p>La posición no cae dentro de ningún campo${d!=null?`; ${esc(c.nombre)} está ${d<1?'justo al lado':fmtDist(d)}`:''}.</p>
+    <div class="acciones"><button id="otro">Elegir otro</button><button class="ok" id="si">Sí, estoy aquí</button></div>`,()=>{
+      $('#otro').onclick=()=>{ cerrarHoja(); setTimeout(hojaElegirCampo, 150); };
+      $('#si').onclick=()=>{
+        cerrarHoja();
+        if(!S.sesion || S.sesion.tramos[S.sesion.tramos.length-1]!==tr || tr.fin) return;
+        delete tr.sug; delete tr.lugar;
+        asignarCampo(tr, c.id);
+        guardar(); pintar(); toast(`Campo: ${c.nombre}`);
+      };
+  });
+}
 function hojaElegirCampo(){
   const tr = S.sesion && !enPausa() && S.sesion.tramos[S.sesion.tramos.length-1];
   if(!tr || tr.modo!=='campo') return;
   const p = tr.posIni;
   const l = S.campos.map(c=>({c, d: p ? distCampo(p,c) : null}));
   if(p) l.sort((a,b)=>a.d-b.d);
+  if(tr.sug){ const i=l.findIndex(x=>x.c.id===tr.sug); if(i>0) l.unshift(l.splice(i,1)[0]); }
   abrirHoja(`<h3>¿En qué campo estás?</h3>
     <p>${p ? 'Primero, los más cercanos a donde pulsaste Campo.' : 'No hay posición de este tramo, así que salen en el orden de la lista.'}</p>
-    ${l.map(({c,d})=>`<button class="opc ${c.id===tr.campo?'sel':''}" data-c="${c.id}"><span class="ico t">${I.parcela}</span><span><span class="n">${esc(c.nombre)}</span><br><span class="s">${fmtHa(c.ha)} ha${d==null?'':d===0?', estás dentro':', '+fmtDist(d)}</span></span></button>`).join('')}
+    ${l.map(({c,d})=>`<button class="opc ${c.id===tr.campo?'sel':''}" data-c="${c.id}"><span class="ico t">${I.parcela}</span><span><span class="n">${esc(c.nombre)}</span><br><span class="s">${c.id===tr.sug?'Sugerido. ':''}${fmtHa(c.ha)} ha${d==null?'':d===0?', estás dentro':', '+fmtDist(d)}</span></span></button>`).join('')}
     <button class="opc ${!tr.campo?'sel':''}" data-c=""><span><span class="n">Campo sin identificar</span><br><span class="s">No cuenta para las hectáreas por hora</span></span></button>
     <div class="acciones"><button id="no">Cancelar</button></div>`,()=>{
       $('#no').onclick=()=>cerrarHoja();
@@ -2394,7 +2555,7 @@ function hojaElegirCampo(){
         const id = b.dataset.c || null;
         cerrarHoja();
         if(id===(tr.campo||null) && !tr.buscando && !tr.lugar) return;
-        delete tr.buscando; delete tr.lugar;
+        delete tr.buscando; delete tr.lugar; delete tr.sug;
         asignarCampo(tr, id);
         guardar(); pintar(); toast(id ? `Campo: ${nombreCampo(id)}` : 'Campo sin identificar');
       });
@@ -2451,20 +2612,28 @@ function hojaRenombrarCampo(id){
 
 /* ---------- botón del tiempo ---------- */
 const TIEMPOS = {
-  google:{n:'Tiempo de Google', ini:'G', color:'#1A73E8', url:'https://www.google.com/search?q=tiempo', pkg:'com.google.android.googlequicksearchbox', intent:'action=android.intent.action.WEB_SEARCH;S.query=tiempo'},
-  aemet:{n:'AEMET', ini:'A', color:'#2E6E9E', url:'https://www.aemet.es/es/portada', pkg:'es.aemet', intent:'action=android.intent.action.MAIN;category=android.intent.category.LAUNCHER'},
+  google:{n:'Tiempo de Google', ini:'G', color:'#1A73E8', url:'https://www.google.com/search?q=tiempo', chrome:true},
+  aemet:{n:'AEMET', ini:'A', color:'#2E6E9E', url:'https://www.aemet.es/es/portada', chrome:true},
   windy:{n:'Windy', ini:'W', color:'#9C3A3A', url:'https://www.windy.com/', pkg:'com.windyty.android'},
   twc:{n:'The Weather Channel', ini:'T', color:'#1B3B6F', url:'https://weather.com/es-ES/', pkg:'com.weather.Weather'}
 };
-/* en Android intenta abrir la app instalada; si no está, abre la web.
-   AEMET y Google no abren su app con su web: AEMET se abre como al tocar su icono y a Google se le pide una búsqueda de "tiempo" (1.4.1.1) */
+/* abre una web en una pestaña normal de Chrome, no en la ventana integrada de la app (1.4.1.4).
+   Si Chrome no deja, abre como antes. */
+function abrirEnChrome(url){
+  if(/Android/i.test(navigator.userAgent)){
+    const u = new URL(url);
+    location.href = `intent://${u.host}${u.pathname}${u.search}#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=${encodeURIComponent(url)};end`;
+  } else window.open(url, '_blank', 'noopener');
+}
+/* Windy y The Weather Channel: en Android intenta abrir la app instalada; si no está, abre la web.
+   AEMET y Google: su web en Chrome (1.4.1.4; abrir su app no funcionó en el Pixel) */
 function abrirTiempo(id){
   const w = TIEMPOS[id] || TIEMPOS.windy;
   if(S.tiempo!==id){ S.tiempo = id; guardar(); }
+  if(w.chrome) return abrirEnChrome(w.url);
   if(/Android/i.test(navigator.userAgent)){
     const fb = `S.browser_fallback_url=${encodeURIComponent(w.url)}`;
-    if(w.intent) location.href = `intent:#Intent;${w.intent};package=${w.pkg};${fb};end`;
-    else { const u = new URL(w.url); location.href = `intent://${u.host}${u.pathname}${u.search}#Intent;scheme=https;package=${w.pkg};${fb};end`; }
+    const u = new URL(w.url); location.href = `intent://${u.host}${u.pathname}${u.search}#Intent;scheme=https;package=${w.pkg};${fb};end`;
   } else window.open(w.url, '_blank', 'noopener');
 }
 function hojaTiempo(){
@@ -2480,7 +2649,7 @@ pulsacionLarga($('#btnTiempo'), ()=>abrirTiempo(S.tiempo), hojaTiempo);
 /* ---------- al pulsar Pausa o STOP en la granja: lo que toca hacer (una vez por sesión) ---------- */
 function avisosGranja(ses, p, intentos){
   intentos = intentos||0;
-  if(!ses || ses.avisoGranja || lugarEn(p)!=='granja') return;
+  if(!ses || ses.avisoGranja || lugarEn(p)!=='granja' || !(S.sesion===ses || S.sesiones.includes(ses))) return;
   if(hojaAbierta){ if(intentos<20) setTimeout(()=>avisosGranja(ses, p, intentos+1), 1500); return; }
   ses.avisoGranja = true; guardar();
   const t = tractor(ses.tractor), a = apero(S.sel.apero);
@@ -2593,7 +2762,7 @@ $('#btnNotas').onclick=abrirNotas;
 
 /* ---------- 1.4.1.3: pijadicas ---------- */
 const LUCA_URL = 'https://app.lucabysowify.com/';
-$('#btnLuca').onclick = ()=>window.open(LUCA_URL, '_blank', 'noopener');
+$('#btnLuca').onclick = ()=>abrirEnChrome(LUCA_URL);
 
 /* horas trabajadas entre dos instantes, por modo (los tramos partidos cuentan solo su parte) */
 function horasEntre(d0, d1){
@@ -2729,6 +2898,14 @@ function pintarAvisos(){
 
 /* ---------- novedades de la versión ---------- */
 const NOVEDADES = [
+  'Al pulsar STOP sale un resumen de la sesión (campo, carretera, campos y apero) con un botón Deshacer durante 10 segundos: vuelves a donde estabas, como si no lo hubieras pulsado.',
+  'Si al pulsar Campo no caes dentro de ningún campo, la app te sugiere uno: donde elegiste tú el campo otras veces o el más cercano. Tocas y confirmas.',
+  'Mantén pulsado Repostar (en Inicio o en Combustible) para apuntar los litros que le quedan al tractor. Servirá para calcular el gasto por campo y apero.',
+  'AEMET, el tiempo de Google y Luca se abren en una pestaña normal de Chrome.',
+  'Teclado: la tecla Siguiente pasa a la casilla de abajo y, en la última, cierra el teclado.',
+  'Pantalla de carga nueva, en tono oscuro.'
+];
+const NOVEDADES_1413 = [
   'Avisos (menú de abajo): todo lo pasado y lo que está a punto de todas tus máquinas, también lo del taller, por cuándo toca. La campana lleva un numerito.',
   'Inicio: debajo de los botones, lo que llevas trabajado hoy. Al pulsar STOP, el aviso dice lo trabajado en la sesión.',
   'Días: arriba de la agenda, el total del día, con campo y carretera.',
@@ -2925,6 +3102,8 @@ window.addEventListener('popstate', e=>{
 history.replaceState({s:'inicio'},'');
 pintar();
 pintarSync();
+/* quita la pantalla de carga en cuanto la app está pintada */
+requestAnimationFrame(()=>{ const c=$('#carga'); if(!c) return; c.classList.add('fuera'); setTimeout(()=>c.remove(), 400); });
 if(navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(()=>{});
 if('serviceWorker' in navigator){
   navigator.serviceWorker.register('sw.js').catch(()=>{});
