@@ -1,5 +1,5 @@
 // Service worker: permite abrir la app sin cobertura.
-const VERSION = 'mant-1.4.1.4';
+const VERSION = 'mant-1.4.2';
 const BASICOS = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', e => {
@@ -41,8 +41,16 @@ self.addEventListener('fetch', e => {
 });
 
 // Al tocar la notificación de sesión abierta: abre la app (o la trae delante).
+// Los botones (Campo, Carretera, Parado) cambian de modo: si la app está abierta le llega un mensaje;
+// si no, se abre con ?modo=... y ella lo aplica al arrancar.
 self.addEventListener('notificationclick', e => {
+  const accion = e.action;
+  if (accion) e.notification.close();
   e.waitUntil(self.clients.matchAll({type:'window', includeUncontrolled:true}).then(l => {
+    if (accion) {
+      if (l.length) { l.forEach(c => c.postMessage({tipo:'modo', modo:accion, t:Date.now()})); return; }
+      return self.clients.openWindow('./?modo=' + encodeURIComponent(accion) + '&t=' + Date.now());
+    }
     for (const c of l) { if ('focus' in c) return c.focus(); }
     return self.clients.openWindow('./');
   }));
