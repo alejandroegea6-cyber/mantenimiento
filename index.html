@@ -454,6 +454,39 @@ details.arr{margin:12px 0 0} details.arr summary{cursor:pointer;color:var(--text
 @media (orientation:landscape) and (max-height:340px){
   .hz-der .ultv{display:none}
 }
+
+/* ---------- 1.4.2.2: Seguirme, velocidad, aviso sin jornada, salir y ruta del día ---------- */
+.libreta.seg{color:var(--text2)}
+.libreta.seg svg{fill:none}
+.libreta.seg.on{background:var(--campo-bg);border-color:var(--campo);color:var(--campo)}
+.libreta.seg.on svg{fill:var(--campo)}
+.libreta.seg.sbien::after,.libreta.seg.smal::after{content:"";position:absolute;top:-3px;right:-3px;width:10px;height:10px;border-radius:50%;border:2px solid var(--bg)}
+.libreta.seg.sbien::after{background:var(--campo)}
+.libreta.seg.smal::after{background:var(--amarillo)}
+.velo{text-align:center;font-size:14px;color:var(--text2);margin:2px 0 0;font-variant-numeric:tabular-nums}
+.velo b{font-size:20px;color:var(--text);font-weight:700}
+.avisoseg{position:fixed;left:12px;right:12px;top:calc(10px + env(safe-area-inset-top,0px));z-index:30;background:var(--tierra);color:var(--tierra-on);border-radius:14px;padding:14px 16px;font-size:16px;line-height:1.35;box-shadow:0 8px 28px rgba(0,0,0,.3);transform:translateY(-150%);transition:transform .2s;max-width:560px;margin:0 auto}
+.avisoseg.on{transform:none}
+.salirdlg{position:fixed;inset:0;z-index:40;background:var(--scrim);display:grid;place-items:center;padding:20px}
+.salirdlg .caja{background:var(--card);color:var(--text);border-radius:16px;padding:18px;max-width:380px;width:100%}
+.salirdlg h3{margin:0 0 6px;font-size:19px}
+.salirdlg p{margin:0 0 14px;color:var(--text2);font-size:15px;line-height:1.4}
+.salirdlg .acciones{display:flex;gap:10px}
+.salirdlg .acciones button{flex:1;padding:12px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--text);font-size:16px;cursor:pointer}
+.salirdlg .acciones .ok{background:var(--campo);border-color:var(--campo);color:var(--campo-on);font-weight:600}
+@media (max-width:400px){ .top{padding-left:12px;padding-right:12px;column-gap:6px} .topizq{gap:6px} .topder{gap:5px} .libreta,#sync.libreta{width:32px} }
+.mapadia{margin:14px 0 0}
+.mapadia h3{font-size:15px;margin:0 0 6px;color:var(--text)}
+.mapadia svg{display:block;width:100%;height:auto;background:var(--card);border:1px solid var(--line);border-radius:12px}
+.mapadia .cn{fill:none;stroke:var(--line);stroke-width:2}
+.mapadia .ch{fill:var(--campo-bg);stroke:var(--campo);stroke-width:2.5}
+.mapadia .ru polyline{fill:none;stroke:var(--tierra);stroke-width:6;stroke-linecap:round;stroke-linejoin:round}
+.mapadia .pi{fill:var(--card);stroke:var(--tierra);stroke-width:4}
+.mapadia .pf{fill:var(--tierra)}
+.mapadia .nm text{font-size:36px;fill:var(--text);text-anchor:middle;paint-order:stroke;stroke:var(--card);stroke-width:6px}
+@media (orientation:landscape) and (max-height:600px){
+  .hz-izq .velo{margin:0;font-size:13px} .hz-izq .velo b{font-size:17px}
+}
 </style>
 </head>
 <body>
@@ -472,7 +505,7 @@ details.arr{margin:12px 0 0} details.arr summary{cursor:pointer;color:var(--text
   <path d="M0 452H400" stroke="#2E3A22" stroke-width="1.5"/>
 </svg><img src="icon-512.png" alt="" width="128" height="128"></div>
 <div class="app">
-  <div class="top"><span class="topizq"><span id="fecha"></span><button class="libreta" id="btnDias" type="button" aria-label="Días"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M4 10h16M9 3v4M15 3v4"/></svg></button></span><span class="topder"><button class="libreta cuad" id="btnCuad" type="button" aria-label="Cuaderno"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h11a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H6z"/><path d="M6 3v18M4 7h4M4 12h4M4 17h4M10 8h5M10 12h5"/></svg></button><button class="libreta" id="btnNotas" type="button" aria-label="Notas de uso"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h10l4 4v12H5z"/><path d="M15 4v4h4M8 12h8M8 16h6"/></svg></button><button class="libreta" id="btnGear" type="button" aria-label="Menú" aria-haspopup="menu" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2.8v2.4M12 18.8v2.4M2.8 12h2.4M18.8 12h2.4M5.5 5.5l1.7 1.7M16.8 16.8l1.7 1.7M5.5 18.5l1.7-1.7M16.8 7.2l1.7-1.7"/></svg></button><button class="libreta" id="sync" type="button" aria-label="Drive"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 18a4 4 0 0 1-.6-7.95A5.5 5.5 0 0 1 17 9.5a4.2 4.2 0 0 1 .2 8.5z"/></svg></button></span></div>
+  <div class="top"><span class="topizq"><span id="fecha"></span><button class="libreta" id="btnDias" type="button" aria-label="Días"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M4 10h16M9 3v4M15 3v4"/></svg></button><button class="libreta seg" id="btnSeg" type="button" aria-label="Seguirme" aria-pressed="false"></button></span><span class="topder"><button class="libreta cuad" id="btnCuad" type="button" aria-label="Cuaderno"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h11a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H6z"/><path d="M6 3v18M4 7h4M4 12h4M4 17h4M10 8h5M10 12h5"/></svg></button><button class="libreta" id="btnNotas" type="button" aria-label="Notas de uso"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h10l4 4v12H5z"/><path d="M15 4v4h4M8 12h8M8 16h6"/></svg></button><button class="libreta" id="btnGear" type="button" aria-label="Menú" aria-haspopup="menu" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2.8v2.4M12 18.8v2.4M2.8 12h2.4M18.8 12h2.4M5.5 5.5l1.7 1.7M16.8 16.8l1.7 1.7M5.5 18.5l1.7-1.7M16.8 7.2l1.7-1.7"/></svg></button><button class="libreta" id="sync" type="button" aria-label="Drive"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 18a4 4 0 0 1-.6-7.95A5.5 5.5 0 0 1 17 9.5a4.2 4.2 0 0 1 .2 8.5z"/></svg></button></span></div>
   <main id="vista"></main>
 </div>
 
@@ -513,7 +546,7 @@ const SECCIONES = [
 
 const H = 3600000;
 const CLAVE = 'mant-app-v1';
-const VERSION_APP = '1.4.2.1';
+const VERSION_APP = '1.4.2.2';
 
 function estadoInicial(){
   return {
@@ -1235,7 +1268,7 @@ const HORIZ = window.matchMedia('(orientation: landscape) and (max-height: 600px
 function dosColumnasInicio(){
   const v = $('#vista'), izq = document.createElement('div'), der = document.createElement('div');
   izq.className = 'hz-izq'; der.className = 'hz-der';
-  ['#largo','#reloj','.reloj-sub','.totales','.controles'].forEach(q=>{ const e = v.querySelector(':scope > '+q); if(e) izq.appendChild(e); });
+  ['#largo','#reloj','.reloj-sub','#velo','.totales','.controles'].forEach(q=>{ const e = v.querySelector(':scope > '+q); if(e) izq.appendChild(e); });
   [...v.children].forEach(e=>{ if(e!==izq) der.appendChild(e); });
   v.append(izq, der);
 }
@@ -1263,6 +1296,7 @@ function pintarInicio(){
     <div class="aviso-largo" id="largo"></div>
     <div class="reloj ${S.sesion?modo:'parado'}" id="reloj" aria-live="off" aria-label="Jornada entera">00:00:00</div>
     <div class="reloj-sub ${pausa?'':modo||''}">${S.sesion ? (pausa?`Parado desde las ${hhmm(tr.inicio)}. Pulsa Campo o Carretera para seguir.`:modo==='campo'?`<button class="encampo" id="bcampo">${tr.buscando?'Buscando el campo…':tr.lugar&&lugar(tr.lugar)?`<span class="rec" aria-hidden="true"></span>${esc(enLugar(lugar(tr.lugar)))}`:tr.campo&&campo(tr.campo)?`<span class="rec" aria-hidden="true"></span>Trabajando en ${esc(campo(tr.campo).nombre)}`:tr.sug&&campo(tr.sug)?`¿Estás en ${esc(campo(tr.sug).nombre)}? Toca para confirmar`:'Campo sin identificar: toca para elegirlo'}</button>`:'<span class="rec" aria-hidden="true"></span>En transporte') : 'Sin sesión abierta'}</div>
+    <div class="velo" id="velo" aria-live="off" hidden></div>
     <div class="totales" aria-label="Tiempo de la jornada por modo">
       <div class="tt carretera ${modo==='carretera'?'on':''}"><span class="v" id="tv-carretera">00:00:00</span><span class="k">Carretera</span></div>
       <div class="tt parado ${pausa?'on':''}"><span class="v" id="tv-parado">00:00:00</span><span class="k">Parado</span></div>
@@ -1299,7 +1333,7 @@ function pintarInicio(){
   $('#bcod').onclick=hojaCodigo;
   if($('#bcampo')) $('#bcampo').onclick=hojaSugerencia;
   $('#bsal').onclick=()=>irA('salir');
-  pintarHoy();
+  pintarHoy(); pintarVelo();
   document.querySelectorAll('[data-taller]').forEach(b=>b.onclick=()=>hojaTaller(b.dataset.taller));
   tic();
 }
@@ -1670,7 +1704,7 @@ function pintarDia(){
       const txt=`${nombreModo(x.t.modo)}, ${nombreApero(x.t.apero)}<br>${hora(x.a)} a ${x.i===-1&&x.t.fin>=Date.now()-1000?'ahora':hora(x.b)} (${durTxt(x.t.fin-x.t.inicio)})${x.partida?' (sesión partida)':''}`;
       html += `<button class="blk ${x.t.modo} ${x.i===-1?'abierta':''} ${x.i>=0&&tramoPorRevisar(x.t)?'rev':''}" data-i="${x.i}" style="top:${top+1}px;height:${alto}px">${txt}</button>`;
     });
-    cuerpo = `${resumenDia(bloques)}<div class="agenda" style="height:${(hFin-hIni)*PX+8}px">${html}</div>`;
+    cuerpo = `${resumenDia(bloques)}<div class="agenda" style="height:${(hFin-hIni)*PX+8}px">${html}</div>${mapaRutaDia(d0, d1)}`;
   }
   $('#vista').innerHTML = `<div class="mes"><button class="flecha" id="pd" aria-label="Día anterior">${FL.izq}</button><h2>${titulo}</h2><button class="flecha" id="sd" aria-label="Día siguiente">${FL.der}</button></div>${cuerpo}<p class="pista">Toca un tramo para ver y corregir su sesión. Para volver al calendario, usa atrás.</p><button class="btn-add" id="addses">+ Añadir sesión a este día</button><button class="btn-add" id="bluca" style="margin-top:8px">Datos para Luca</button>`;
   $('#addses').onclick=()=>hojaSesionManual(diaSel);
@@ -2380,6 +2414,7 @@ function pintar(){
   $('#fecha').textContent = fechaArriba();
   pintarNav();
   document.body.classList.toggle('en-inicio', seccion==='inicio');
+  if(typeof pintarSeguirmeBtn==='function') pintarSeguirmeBtn();
   if(seccion==='inicio') pintarInicio();
   else if(seccion==='mant') pintarMant();
   else if(seccion==='gasoil'){ pintarComb(); pijadicaComb(); }
@@ -3060,10 +3095,10 @@ function horasEntre(d0, d1){
   por.total = por.campo+por.carretera+por.nose; /* el parado no entra en el total trabajado */
   return por;
 }
-function frasePartes(p){
+function frasePartes(p, km){
   const l = [];
   if(p.campo>=60000) l.push(`${durTxt(p.campo)} en campo`);
-  if(p.carretera>=60000) l.push(`${durTxt(p.carretera)} en carretera`);
+  if(p.carretera>=60000) l.push(`${durTxt(p.carretera)} en carretera${km>=0.1?` (${kmTxt(km)})`:''}`);
   if(p.nose>=60000) l.push(`${durTxt(p.nose)} sin saber`);
   if(p.parado>=60000) l.push(`${durTxt(p.parado)} parado`);
   return l.length>1 ? l.slice(0,-1).join(', ')+' y '+l[l.length-1] : (l[0]||'');
@@ -3074,7 +3109,7 @@ function pintarHoy(){
   const d0 = inicioDia(Date.now()), p = horasEntre(d0, Date.now());
   if(p.total < 60000){ el.innerHTML = ''; el.style.display='none'; return; }
   el.style.display='';
-  el.innerHTML = `Hoy llevas <b>${durTxt(p.total)}</b>: ${frasePartes(p)}`;
+  el.innerHTML = `Hoy llevas <b>${durTxt(p.total)}</b>: ${frasePartes(p, kmEntre(d0, Date.now()))}`;
 }
 /* Días: total del día, arriba de la agenda */
 function resumenDia(bl){
@@ -3191,6 +3226,14 @@ function pintarAvisos(){
 
 /* ---------- novedades de la versión ---------- */
 const NOVEDADES = [
+  'Seguirme: la flecha de arriba, al lado del calendario. Encendida (en verde), el GPS lee todo el rato y la pantalla no se apaga. Con la jornada en marcha cambia sola entre Campo y Carretera, y en carretera guarda la ruta. Apagada, solo botones. El cambio automático ya no está en Ajustes.',
+  'El puntito de la flecha dice cómo va el GPS: verde, lee bien; naranja, mala señal. Con Seguirme, en Inicio sale la velocidad.',
+  'Si te mueves con Seguirme encendido y sin haber empezado la jornada, sale un aviso con pitido y vibración (como mucho uno cada 5 minutos).',
+  'Con Seguirme encendido, el botón atrás en Inicio pregunta antes de salir.',
+  'En el engranaje, Pantalla horizontal: pone la app a pantalla completa y en horizontal. Pulsado otra vez, vuelve a vertical.',
+  'Kilómetros de carretera del día en «Hoy llevas» y, en Días, la ruta del día dibujada sobre los campos, sin internet.'
+];
+const NOVEDADES_1421 = [
   'Prueba del móvil en horizontal: al girarlo, el menú pasa a la derecha. Inicio queda fijo, sin subir ni bajar, a dos columnas: a la izquierda el reloj y los botones; a la derecha el tractor y el apero, las horas de hoy, Antes de salir, Horómetro, Repostar, Código de fallo y el aviso más urgente.'
 ];
 const NOVEDADES_142 = [
@@ -3781,22 +3824,260 @@ function evaluarGps(p, vel){
     } else gpsE.salir = 0;
   } else { gpsE.dentro = 0; gpsE.salir = 0; }
 }
+/* ============ 1.4.2.2: Seguirme, ruta en carretera, aviso sin jornada, salir con atrás y pantalla horizontal ============ */
+/* Seguirme encendido: el GPS lee todo el rato (con la app a la vista) y la pantalla no se apaga.
+   Con jornada: cambio automático Campo/Carretera (el de la 1.4.2) y, en carretera, ruta con un punto cada 100 m.
+   Apagado: solo botones, con la lectura de cada botón (Guardar la posición). */
+const RUTA_PASO = 100, RUTA_HUECO = 3*MIN1, RUTA_TOL = 10, SEN_VIEJA = 30000;
+var gpsSen = null, gpsVelo = null, rutaAb = null, rutaUlt = null, rutaFin = null, wl = null, actx = null;
+var sinJor = {n:0, ult:0};
+const r5 = x => Math.round(x*1e5);
+function guardarLigero(){ try{ localStorage.setItem(CLAVE, JSON.stringify(S)); }catch(e){} }
+/* ruta compacta: [lat, lon, 0, dlat, dlon, dseg, ...] en cienmilésimas de grado (≈1 m) y segundos */
+function rutaPuntos(seg){
+  const p = seg.p, out = []; let la=0, lo=0, t=seg.a;
+  for(let i=0;i+2<p.length;i+=3){ la += p[i]; lo += p[i+1]; t += p[i+2]*1000; out.push({lat:la/1e5, lon:lo/1e5, t}); }
+  return out;
+}
+function rutaCodificar(pts){
+  const p = []; let la=0, lo=0, t=pts.length?pts[0].t:0;
+  pts.forEach(q=>{ const a=r5(q.lat), b=r5(q.lon), s=Math.round((q.t-t)/1000); p.push(a-la, b-lo, s); la=a; lo=b; t+=s*1000; });
+  return {a: pts.length?pts[0].t:0, p};
+}
+/* quitar puntos en las rectas (Douglas-Peucker, 10 m): curvas y cruces se quedan */
+function simplificar(pts){
+  if(pts.length<3) return pts;
+  const kx = Math.cos(pts[0].lat*Math.PI/180)*111320, ky = 110540;
+  const xy = pts.map(q=>[q.lon*kx, q.lat*ky]), keep = new Array(pts.length).fill(false);
+  keep[0] = keep[pts.length-1] = true;
+  const pila = [[0, pts.length-1]];
+  while(pila.length){
+    const [i,j] = pila.pop(); let dm = 0, im = -1;
+    const [x1,y1]=xy[i], [x2,y2]=xy[j], dx=x2-x1, dy=y2-y1, l=Math.hypot(dx,dy);
+    for(let k=i+1;k<j;k++){ const d = l ? Math.abs(dy*xy[k][0]-dx*xy[k][1]+x2*y1-y2*x1)/l : Math.hypot(xy[k][0]-x1, xy[k][1]-y1); if(d>dm){ dm=d; im=k; } }
+    if(dm > RUTA_TOL){ keep[im]=true; pila.push([i,im],[im,j]); }
+  }
+  return pts.filter((_,k)=>keep[k]);
+}
+function rutaPunto(p){
+  if(!S.rutas) S.rutas = [];
+  rutaFin = p;
+  if(rutaAb!=null && rutaUlt){
+    if(p.t - rutaUlt.t > RUTA_HUECO) rutaCerrar(); /* la app estuvo fuera: tramo nuevo, sin raya recta por medio */
+    else if(metros(rutaUlt, p) < RUTA_PASO) return;
+  }
+  if(rutaAb==null){
+    S.rutas.push({a:p.t, p:[r5(p.lat), r5(p.lon), 0]}); rutaAb = S.rutas.length-1;
+    rutaUlt = {lat:r5(p.lat)/1e5, lon:r5(p.lon)/1e5, t:p.t};
+  } else {
+    const seg = S.rutas[rutaAb], s = Math.round((p.t-rutaUlt.t)/1000);
+    seg.p.push(r5(p.lat)-r5(rutaUlt.lat), r5(p.lon)-r5(rutaUlt.lon), s);
+    rutaUlt = {lat:r5(p.lat)/1e5, lon:r5(p.lon)/1e5, t:rutaUlt.t+s*1000};
+  }
+  guardarLigero();
+}
+function rutaCerrar(){
+  if(rutaAb==null) return;
+  const seg = S.rutas && S.rutas[rutaAb];
+  if(seg){
+    let pts = rutaPuntos(seg);
+    if(rutaFin && rutaUlt && rutaFin.t-rutaUlt.t <= RUTA_HUECO && metros(rutaUlt, rutaFin) >= 20) pts.push({lat:rutaFin.lat, lon:rutaFin.lon, t:rutaFin.t});
+    if(pts.length<2) S.rutas.splice(rutaAb,1);
+    else Object.assign(seg, rutaCodificar(simplificar(pts)));
+  }
+  rutaAb = null; rutaUlt = null; rutaFin = null;
+  guardarLigero();
+}
+const enCarretera = () => { const tr = S.sesion && S.sesion.tramos[S.sesion.tramos.length-1]; return !!(tr && !tr.fin && tr.modo==='carretera'); };
+function kmEntre(d0, d1){
+  let m = 0;
+  (S.rutas||[]).forEach(seg=>{ const pts = rutaPuntos(seg); for(let i=1;i<pts.length;i++) if(pts[i].t>d0 && pts[i].t<=d1) m += metros(pts[i-1], pts[i]); });
+  return m/1000;
+}
+const kmTxt = km => (km<10 ? km.toFixed(1) : String(Math.round(km))).replace('.', ',') + ' km';
+
+/* cada lectura del GPS: señal, velocidad y ruta; cada 10 s como mínimo: aviso sin jornada y cambio automático */
 function gpsLectura(pos){
-  const ahora = Date.now();
+  const ahora = Date.now(), prec = pos.coords.accuracy||0;
+  const p = {lat:pos.coords.latitude, lon:pos.coords.longitude, prec:Math.round(prec), t:ahora};
+  const vel = pos.coords.speed!=null && !isNaN(pos.coords.speed) ? pos.coords.speed : null;
+  const buena = !prec || prec <= GPS_PREC;
+  if(buena){
+    let v = vel;
+    if(v==null && gpsSen && gpsSen.p && ahora-gpsSen.t >= 2000 && ahora-gpsSen.t < 20000) v = metros(gpsSen.p, p)/((ahora-gpsSen.t)/1000);
+    gpsVelo = v;
+    gpsSen = {t:ahora, prec:p.prec, p};
+  } else gpsSen = Object.assign({}, gpsSen||{}, {mala:ahora});
+  pintarSenal(); pintarVelo();
+  if(!buena) return;
+  if(S.seguirme && enCarretera()) rutaPunto(p); else if(rutaAb!=null) rutaCerrar();
   if(ahora - gpsE.ult < GPS_MIN_MS.v) return;
-  if(pos.coords.accuracy && pos.coords.accuracy > GPS_PREC) return;
   gpsE.ult = ahora;
-  evaluarGps({lat:pos.coords.latitude, lon:pos.coords.longitude, prec:Math.round(pos.coords.accuracy||0), t:ahora}, pos.coords.speed!=null && !isNaN(pos.coords.speed) ? pos.coords.speed : null);
+  let v = vel;
+  if(v==null && gpsE.pv && ahora-gpsE.pv.t >= 4000) v = metros(gpsE.pv, p)/((ahora-gpsE.pv.t)/1000);
+  gpsE.pv = p;
+  avisoSinJornada(v);
+  evaluarGps(p, v);
 }
 function gestionarGps(){
-  const quiere = S.autoGps!==false && S.posActiva && S.sesion && document.visibilityState==='visible' && !gpsDenegado && !!navigator.geolocation;
+  const quiere = !!S.seguirme && document.visibilityState==='visible' && !gpsDenegado && !!navigator.geolocation;
   if(quiere && gpsWatch==null){
-    gpsE = {fuera:null, dentro:0, salir:0, prev:null, ult:0};
-    try{ gpsWatch = navigator.geolocation.watchPosition(gpsLectura, e=>{ if(e && e.code===1){ gpsDenegado = true; } }, {enableHighAccuracy:true, maximumAge:5000, timeout:30000}); }catch(e){ gpsWatch = null; }
+    gpsE = {fuera:null, dentro:0, salir:0, prev:null, ult:0, pv:null};
+    try{ gpsWatch = navigator.geolocation.watchPosition(gpsLectura, e=>{ if(e && e.code===1){ gpsDenegado = true; if(S.seguirme) toast('Sin permiso de ubicación: Seguirme no puede leer el GPS', 4000); } }, {enableHighAccuracy:true, maximumAge:5000, timeout:30000}); }catch(e){ gpsWatch = null; }
   } else if(!quiere && gpsWatch!=null){
     try{ navigator.geolocation.clearWatch(gpsWatch); }catch(e){} gpsWatch = null;
   }
+  if(rutaAb!=null && !(S.seguirme && enCarretera())) rutaCerrar();
+  if(S.seguirme && document.visibilityState==='visible') pedirWake(); else soltarWake();
+  pintarSenal();
 }
+
+/* pantalla siempre encendida mientras Seguirme está encendido y la app a la vista */
+async function pedirWake(){
+  if(wl || !('wakeLock' in navigator)) return;
+  try{ wl = await navigator.wakeLock.request('screen'); wl.addEventListener('release', ()=>{ wl = null; }); }catch(e){ wl = null; }
+}
+function soltarWake(){ if(wl){ try{ wl.release(); }catch(e){} wl = null; } }
+
+/* aviso: te mueves y no has empezado la jornada */
+function avisoSinJornada(v){
+  if(S.sesion || !S.seguirme){ sinJor.n = 0; return; }
+  if(v!=null && v > 5/3.6) sinJor.n++; else sinJor.n = 0;
+  if(sinJor.n >= 2 && Date.now()-sinJor.ult >= 5*MIN1){ sinJor.n = 0; sinJor.ult = Date.now(); mostrarAvisoSinJornada(); }
+}
+function mostrarAvisoSinJornada(){
+  let el = $('#avisoSeg');
+  if(!el){ el = document.createElement('div'); el.id='avisoSeg'; el.className='avisoseg'; el.setAttribute('role','alert'); document.body.appendChild(el); }
+  el.innerHTML = `<b>Te estás moviendo y no has empezado la jornada</b><br>Pulsa Inicio si ya estás trabajando.`;
+  el.classList.add('on');
+  try{ if(navigator.vibrate) navigator.vibrate([300,150,300,150,300]); }catch(e){}
+  pitido();
+  clearTimeout(mostrarAvisoSinJornada.k); mostrarAvisoSinJornada.k = setTimeout(()=>el.classList.remove('on'), 8000);
+}
+function desbloquearAudio(){
+  try{ if(!actx){ const C = window.AudioContext || window.webkitAudioContext; if(C) actx = new C(); } if(actx && actx.state==='suspended') actx.resume(); }catch(e){}
+}
+function pitido(){
+  if(!actx) return;
+  try{
+    if(actx.state==='suspended') actx.resume();
+    [0, .35].forEach(d=>{
+      const o = actx.createOscillator(), g = actx.createGain(), t = actx.currentTime + d;
+      o.type='square'; o.frequency.value = 1100; o.connect(g); g.connect(actx.destination);
+      g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.25, t+.02); g.gain.exponentialRampToValueAtTime(0.0001, t+.25);
+      o.start(t); o.stop(t+.27);
+    });
+  }catch(e){}
+}
+
+/* botón Seguirme: flecha al lado del calendario de Días */
+const ICO_FLECHA = '<svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"><path d="M20 4 4 11l7 2 2 7z"/></svg>';
+function pintarSeguirmeBtn(){
+  const b = $('#btnSeg'); if(!b) return;
+  b.classList.toggle('on', !!S.seguirme);
+  b.setAttribute('aria-pressed', S.seguirme ? 'true' : 'false');
+  pintarSenal();
+}
+function pintarSenal(){
+  const b = $('#btnSeg'); if(!b) return;
+  const ok = !!(gpsSen && gpsSen.p && Date.now()-gpsSen.t < SEN_VIEJA && !(gpsSen.mala && gpsSen.mala > gpsSen.t));
+  b.classList.toggle('sbien', !!S.seguirme && ok);
+  b.classList.toggle('smal', !!S.seguirme && !ok);
+  const t = !S.seguirme ? 'Seguirme apagado' : ok ? 'Seguirme encendido: el GPS lee bien' : 'Seguirme encendido: mala señal del GPS';
+  b.setAttribute('aria-label', t); b.title = t;
+}
+function pintarVelo(){
+  const el = $('#velo'); if(!el) return;
+  if(!S.seguirme){ el.hidden = true; return; }
+  el.hidden = false;
+  const ok = gpsSen && Date.now()-gpsSen.t < SEN_VIEJA;
+  el.innerHTML = !ok ? 'Buscando el GPS…' : gpsVelo!=null ? `<b>${Math.round(gpsVelo*3.6)}</b> km/h` : '<b>–</b> km/h';
+}
+setInterval(()=>{ pintarSenal(); pintarVelo(); }, 5000);
+function cambiarSeguirme(){
+  S.seguirme = !S.seguirme;
+  if(S.seguirme){ gpsDenegado = false; desbloquearAudio(); }
+  else { rutaCerrar(); gpsSen = null; gpsVelo = null; quitarGuardia(); }
+  guardar(); pintarSeguirmeBtn(); gestionarGps(); pintarVelo();
+  if(S.seguirme) armarGuardia();
+  toast(S.seguirme ? 'Seguirme encendido: la pantalla no se apagará' : 'Seguirme apagado: solo botones', 3000);
+}
+$('#btnSeg').innerHTML = ICO_FLECHA;
+$('#btnSeg').onclick = cambiarSeguirme;
+pintarSeguirmeBtn();
+document.addEventListener('pointerdown', ()=>{ if(S.seguirme){ desbloquearAudio(); armarGuardia(); } }, true);
+
+/* botón atrás en Inicio con Seguirme: pide confirmación para salir */
+function armarGuardia(){
+  if(!S.seguirme || seccion!=='inicio' || hojaAbierta) return;
+  const st = history.state;
+  if(st && st.s==='inicio' && !st.g && !st.hoja) history.pushState({s:'inicio', g:1}, '');
+}
+function quitarGuardia(){ const st = history.state; if(st && st.g){ ignorarPop = true; history.back(); } }
+function confirmarSalir(){
+  if($('#salirDlg')) return;
+  const d = document.createElement('div'); d.id='salirDlg'; d.className='salirdlg';
+  d.innerHTML = `<div class="caja" role="alertdialog" aria-labelledby="salirT"><h3 id="salirT">¿Salir de la app?</h3><p>Con la app fuera, el GPS deja de leer. La jornada sigue contando en el modo en que esté.</p><div class="acciones"><button id="salQ" class="ok">Quedarme</button><button id="salS">Salir</button></div></div>`;
+  document.body.appendChild(d);
+  $('#salQ').onclick = ()=>{ d.remove(); armarGuardia(); };
+  $('#salS').onclick = ()=>{ d.remove(); try{ window.close(); }catch(e){} setTimeout(()=>{ if(document.visibilityState==='visible') toast('Pulsa atrás otra vez para salir', 3500); }, 400); };
+  $('#salQ').focus();
+}
+
+/* pantalla horizontal fija, a pantalla completa (desde el engranaje) */
+const enHorizontalFijo = () => !!document.fullscreenElement;
+async function cambiarHorizontal(){
+  try{
+    if(enHorizontalFijo()){
+      try{ screen.orientation.unlock(); }catch(e){}
+      await document.exitFullscreen();
+      toast('Vuelta a vertical');
+    } else {
+      if(!document.documentElement.requestFullscreen){ toast('Este móvil no deja poner la app a pantalla completa'); return; }
+      await document.documentElement.requestFullscreen({navigationUI:'hide'});
+      try{ await screen.orientation.lock('landscape'); }
+      catch(e){ toast('Pantalla completa, pero el móvil no deja fijar la horizontal: gíralo a mano', 4000); return; }
+    }
+  }catch(e){ toast('No se ha podido cambiar la pantalla'); }
+}
+
+/* Días: ruta del día dibujada sobre los contornos de los campos, sin internet */
+function mapaRutaDia(d0, d1){
+  const segs = [];
+  (S.rutas||[]).forEach(seg=>{ const pts = rutaPuntos(seg).filter(q=>q.t>=d0 && q.t<d1); if(pts.length>=2) segs.push(pts); });
+  if(!segs.length) return '';
+  const km = kmEntre(d0, d1);
+  const hechos = new Set();
+  todasSesiones().forEach(({s})=>s.tramos.forEach(t=>{ if(t.modo==='campo' && t.campo && t.inicio<d1 && (t.fin||Date.now())>d0) hechos.add(t.campo); }));
+  let mnx=Infinity, mxx=-Infinity, mny=Infinity, mxy=-Infinity;
+  const ext = (lon,lat) => { if(lon<mnx) mnx=lon; if(lon>mxx) mxx=lon; if(lat<mny) mny=lat; if(lat>mxy) mxy=lat; };
+  segs.forEach(pts=>pts.forEach(q=>ext(q.lon,q.lat)));
+  (S.campos||[]).filter(c=>hechos.has(c.id)).forEach(c=>c.recintos.forEach(k=>poligonos(k).forEach(pol=>pol[0].forEach(([x,y])=>ext(x,y)))));
+  const lat0 = (mny+mxy)/2, kx = Math.cos(lat0*Math.PI/180)*111320, ky = 110540;
+  let w = (mxx-mnx)*kx, h = (mxy-mny)*ky, cx = (mnx+mxx)/2, cy = lat0;
+  w = Math.max(w, 400) + 300; h = Math.max(h, 300) + 300;
+  if(h < w*0.55) h = w*0.55; if(h > w*1.1) w = h/1.1;
+  const W = 1000, sc = W/w, Hh = Math.round(h*sc);
+  const px = (lon,lat) => [((lon-cx)*kx + w/2)*sc, (h/2 - (lat-cy)*ky)*sc];
+  const dentroVista = (lon,lat) => { const [x,y]=px(lon,lat); return x>-200 && x<W+200 && y>-200 && y<Hh+200; };
+  let campos = '', nombres = '';
+  (S.campos||[]).forEach(c=>{
+    const polis = []; let visto = false;
+    c.recintos.forEach(k=>poligonos(k).forEach(pol=>{ pol.forEach(r=>{ if(r.some(([x,y])=>dentroVista(x,y))) visto = true; polis.push(r); }); }));
+    if(!visto) return;
+    const d = polis.map(r=>'M'+r.map(([x,y])=>px(x,y).map(n=>n.toFixed(1)).join(',')).join('L')+'Z').join('');
+    const hecho = hechos.has(c.id);
+    campos += `<path d="${d}" class="${hecho?'ch':'cn'}" fill-rule="evenodd"/>`;
+    if(hecho){ const r = polis[0]; let sx=0, sy=0; r.forEach(([x,y])=>{ const [a,b]=px(x,y); sx+=a; sy+=b; }); nombres += `<text x="${(sx/r.length).toFixed(0)}" y="${(sy/r.length).toFixed(0)}">${esc(c.nombre)}</text>`; }
+  });
+  const rutas = segs.map(pts=>`<polyline points="${pts.map(q=>px(q.lon,q.lat).map(n=>n.toFixed(1)).join(',')).join(' ')}"/>`).join('');
+  const ini = segs[0][0], fin = segs[segs.length-1][segs[segs.length-1].length-1];
+  const [ix,iy] = px(ini.lon,ini.lat), [fx,fy] = px(fin.lon,fin.lat);
+  return `<section class="mapadia" aria-label="Ruta del día"><h3>Ruta del día: ${kmTxt(km)} por carretera</h3>
+    <svg viewBox="0 0 ${W} ${Hh}" role="img" aria-label="Mapa con la ruta por carretera de este día y los campos">${campos}<g class="ru">${rutas}</g><circle cx="${ix.toFixed(1)}" cy="${iy.toFixed(1)}" r="9" class="pi"/><circle cx="${fx.toFixed(1)}" cy="${fy.toFixed(1)}" r="9" class="pf"/><g class="nm">${nombres}</g></svg>
+    <p class="nota">En verde, los campos trabajados este día. Círculo claro: salida; oscuro: llegada. Solo se guarda la ruta por carretera con Seguirme encendido. Contornos: SIGPAC (FEGA), CC BY 4.0.</p></section>`;
+}
+
 setInterval(gestionarGps, 3000);
 document.addEventListener('visibilitychange', gestionarGps);
 
@@ -3951,6 +4232,7 @@ function hojaNivel(n){
 }
 
 /* ============ 1.4.2 parte 6: barra de arriba, engranaje, Ajustes por secciones, Importar datos y Cuaderno ============ */
+const ICO_HORIZ = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6.5" width="18" height="11" rx="2"/><path d="M17.5 10v4"/></svg>';
 const ICO_NUBE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 18a4 4 0 0 1-.6-7.95A5.5 5.5 0 0 1 17 9.5a4.2 4.2 0 0 1 .2 8.5z"/></svg>';
 const ICO_TIEMPO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="9" r="3.2"/><path d="M9 2.5v1.3M2.5 9h1.3M4.4 4.4l.9.9M13.6 4.4l-.9.9"/><path d="M8.5 20h8a3.5 3.5 0 0 0 .3-7 4.8 4.8 0 0 0-9.1 1.4A2.8 2.8 0 0 0 8.5 20z"/></svg>';
 function fechaArriba(){
@@ -3968,7 +4250,7 @@ function abrirMenuGear(){
   const m = document.createElement('div'); m.id='menuGear'; m.className='menugear'; m.setAttribute('role','menu');
   const item = (id,ic,txt,sub) => `<button role="menuitem" data-g="${id}">${ic}<span>${txt}</span>${sub?'<span class="fl">›</span>':''}</button>`;
   m.innerHTML = `${item('tiempo',ICO_TIEMPO, 'El tiempo', true)}<div class="sub" id="gsub" hidden>${Object.entries(TIEMPOS).map(([id,w])=>`<button role="menuitem" data-t="${id}"><span class="ini" style="background:${w.color}" aria-hidden="true">${w.ini}</span><span>${w.n}</span></button>`).join('')}</div>
-    ${item('luca','<span class="lu" aria-hidden="true">L</span>','Luca')}${item('campos',I.parcela,'Campos')}${item('stats',I.chart,'Estadísticas')}${item('ajustes',I.gear,'Ajustes')}`;
+    ${item('luca','<span class="lu" aria-hidden="true">L</span>','Luca')}${item('campos',I.parcela,'Campos')}${item('stats',I.chart,'Estadísticas')}${item('ajustes',I.gear,'Ajustes')}${item('horiz',ICO_HORIZ, enHorizontalFijo()?'Volver a vertical':'Pantalla horizontal')}`;
   const sc = document.createElement('div'); sc.id='menuGearSc'; sc.className='menugear-sc'; sc.onclick=cerrarMenuGear;
   document.body.appendChild(sc); document.body.appendChild(m);
   $('#btnGear').setAttribute('aria-expanded','true');
@@ -3977,7 +4259,8 @@ function abrirMenuGear(){
     const g=b.dataset.g;
     if(g==='tiempo'){ const s=$('#gsub'); s.hidden=!s.hidden; b.classList.toggle('abierto',!s.hidden); return; }
     cerrarMenuGear();
-    if(g==='luca') abrirEnChrome(LUCA_URL);
+    if(g==='horiz') cambiarHorizontal();
+    else if(g==='luca') abrirEnChrome(LUCA_URL);
     else if(g==='ajustes') hojaAjustes();
     else irA(g);
   });
@@ -4001,7 +4284,7 @@ const AJ_SECCIONES = [
   ['drive','Puente con Drive','Dirección, clave, subir y recuperar'],
   ['importar','Importar datos','Cargar órdenes de un archivo JSON'],
   ['noti','Notificación de sesión abierta',null],
-  ['pos','Posición y cambio automático',null],
+  ['pos','Posición',null],
   ['avisos','Avisos','Umbrales de colores y alertas'],
   ['campana','Campaña','Desde cuándo cuentan las horas de campaña'],
   ['nov','Novedades','Qué hay de nuevo en la versión '+VERSION_APP]
@@ -4012,7 +4295,7 @@ function hojaAjustes(sec){
   ({drive:ajDrive, importar:ajImportar, noti:ajNoti, pos:ajPos, avisos:ajAvisos, campana:ajCampana, nov:ajNov})[sec]();
 }
 function ajMenu(){
-  const sub = id => id==='noti' ? (S.notiSesion && notiPermiso()==='granted' ? 'Activada' : 'Desactivada') : id==='pos' ? (S.posActiva ? (S.autoGps!==false?'Activada, con cambio automático':'Activada') : 'Desactivada') : null;
+  const sub = id => id==='noti' ? (S.notiSesion && notiPermiso()==='granted' ? 'Activada' : 'Desactivada') : id==='pos' ? (S.posActiva ? 'Activada' : 'Desactivada') : null;
   abrirHoja(`<h3>Ajustes</h3><p class="nota" style="margin-top:0">Versión ${VERSION_APP}</p>
     ${AJ_SECCIONES.map(([id,t,s])=>`<button class="opc" data-a="${id}"><span><span class="n">${t}</span>${(s||sub(id))?`<br><span class="s">${s||sub(id)}</span>`:''}</span><span class="fl" aria-hidden="true">›</span></button>`).join('')}
     <div class="acciones"><button id="no">Cerrar</button></div>`,()=>{
@@ -4072,13 +4355,12 @@ function ajNoti(){
   });
 }
 function ajPos(){
-  abrirHoja(`${ajCabecera('Posición y cambio automático')}
+  abrirHoja(`${ajCabecera('Posición')}
     <p class="peq" style="margin-top:4px">Guardar la posición</p>
     <p class="nota" style="margin-top:0">${S.posActiva ? 'Activada. Al pulsar Carretera, Campo, Parado o STOP, la app lee el GPS una vez. Sirve para saber en qué campo estás y de dónde a dónde vas. Casi no gasta batería.' : 'Desactivada. No se guarda dónde estás ni se reconoce el campo.'}</p>
     <div class="acciones" style="margin-top:6px"><button id="pos">${S.posActiva?'Desactivar':'Activar'}</button></div>
-    ${S.posActiva ? `<p class="peq" style="margin-top:14px">Cambio automático Campo y Carretera</p><p class="nota" style="margin-top:0">${S.autoGps!==false ? 'Activado. Con la app abierta en pantalla, al entrar en un campo pasa sola a Campo y al salir (a más de 50 m y moviéndote) a Carretera, con vibración y aviso. Con la pantalla apagada no funciona. Lee el GPS cada poco y gasta más batería.' : 'Desactivado.'}</p><div class="acciones" style="margin-top:6px"><button id="agps">${S.autoGps!==false?'Desactivar':'Activar'}</button></div>` : ''}`,()=>{
+    <p class="peq" style="margin-top:14px">Cambio automático Campo y Carretera</p><p class="nota" style="margin-top:0">Funciona solo con Seguirme encendido (la flecha de arriba, al lado del calendario).</p>`,()=>{
       $('#ajvolver').onclick=()=>hojaAjustes();
-      if($('#agps')) $('#agps').onclick=()=>{ S.autoGps = S.autoGps===false; guardar(); ajPos(); gestionarGps(); toast(S.autoGps!==false?'Cambio automático activado':'Cambio automático desactivado'); };
       $('#pos').onclick=()=>{ S.posActiva=!S.posActiva; guardar(); ajPos(); toast(S.posActiva?'Posición activada':'Posición desactivada'); };
   });
 }
@@ -4699,6 +4981,7 @@ function pijadicaComb(){
 window.addEventListener('popstate', e=>{
   if(ignorarPop){ ignorarPop=false; return; }
   if(hojaAbierta){ cerrarHoja(true); return; }
+  if(S.seguirme && seccion==='inicio' && !(e.state && e.state.g) && (!e.state || e.state.s==='inicio')){ confirmarSalir(); return; }
   const s = (e.state && e.state.s) || 'inicio';
   if(s==='dias' && seccion==='dias' && diasModo==='dia'){ diasModo='cal'; pintar(); return; }
   if(s==='maquinas' && seccion==='maquinas' && maqFicha){ maqFicha=null; pintar(); return; }
