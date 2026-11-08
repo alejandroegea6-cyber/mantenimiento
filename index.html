@@ -546,7 +546,7 @@ const SECCIONES = [
 
 const H = 3600000;
 const CLAVE = 'mant-app-v1';
-const VERSION_APP = '1.4.2.2';
+const VERSION_APP = '1.4.2.3';
 
 function estadoInicial(){
   return {
@@ -3226,6 +3226,11 @@ function pintarAvisos(){
 
 /* ---------- novedades de la versión ---------- */
 const NOVEDADES = [
+  'Dos móviles: al abrir la app con internet, si Drive tiene datos más nuevos (por ejemplo, del otro móvil) y este no tiene nada sin subir, se pone al día solo.',
+  'Si has apuntado en los dos móviles, la app ya no pisa los datos de Drive: te pregunta cuáles se quedan. Mientras no elijas, la nube dice que hay que elegir.',
+  'Un móvil nuevo o vacío ya no puede borrar la copia de Drive al guardar la conexión: pregunta antes.'
+];
+const NOVEDADES_1422 = [
   'Seguirme: la flecha de arriba, al lado del calendario. Encendida (en verde), el GPS lee todo el rato y la pantalla no se apaga. Con la jornada en marcha cambia sola entre Campo y Carretera, y en carretera guarda la ruta. Apagada, solo botones. El cambio automático ya no está en Ajustes.',
   'El puntito de la flecha dice cómo va el GPS: verde, lee bien; naranja, mala señal. Con Seguirme, en Inicio sale la velocidad.',
   'Si te mueves con Seguirme encendido y sin haber empezado la jornada, sale un aviso con pitido y vibración (como mucho uno cada 5 minutos).',
@@ -3333,24 +3338,105 @@ async function llamar(cuerpo){
   if(!j.ok) throw new Error(j.error || 'Error desconocido');
   return j;
 }
+/* 1.4.2.3: control de versiones con Drive. Cada subida lleva un número (S.rev) y qué móvil la hizo.
+   Antes de subir se mira Drive: si cambió desde la última vez que este móvil sincronizó, no se pisa: se pregunta.
+   Al abrir la app sin nada pendiente, si Drive es más nuevo, se baja solo. No junta datos de dos móviles. */
+const DISP = (()=>{ let d=null; try{ d=localStorage.getItem('mant-disp'); if(!d){ d='m'+Date.now().toString(36)+Math.random().toString(36).slice(2,6); localStorage.setItem('mant-disp', d); } }catch(e){ d='m0'; } return d; })();
+function guardarLocal(){ try{ localStorage.setItem(CLAVE, JSON.stringify(S)); }catch(e){} }
+async function leerDrive(){
+  const j = await llamar({accion:'leer'});
+  const e = j.estado || null;
+  return {estado:e, rev: e && e.rev ? e.rev : 0, disp: e ? e.revDisp : null, fecha: e ? e.revFecha : null};
+}
+const tieneDatos = e => !!(e && ((e.tractores && e.tractores.length) || (e.aperos && e.aperos.length > 1)));
+function hayConflicto(dr){
+  if(!dr.estado) return false;
+  if(sync.base == null){
+    if(!sync.ultimo) return tieneDatos(dr.estado);   /* móvil que nunca ha sincronizado: no pisar lo de Drive */
+    return dr.rev > 0 && dr.disp !== DISP;            /* móviles de antes de la 1.4.2.3 */
+  }
+  return dr.rev > sync.base;
+}
 async function subir(){
   if(!cfg.url || !cfg.clave || !sync.pendiente){ pintarSync(); return; }
   if(!navigator.onLine){ pintarSync(); return; }
-  if(subiendo) return;
+  if(subiendo || sync.conflicto) { pintarSync(); return; }
   subiendo = true; pintarSync();
   const n = sync.cambios;
   try{
+    const dr = await leerDrive();
+    if(hayConflicto(dr)){
+      subiendo = false; sync.conflicto = {rev:dr.rev, disp:dr.disp||null, fecha:dr.fecha||null}; sync.error = null; guardarSync(); pintarSync();
+      hojaConflicto(dr); return;
+    }
+    S.rev = dr.rev + 1; S.revDisp = DISP; S.revFecha = Date.now(); guardarLocal();
     await llamar({accion:'guardar', estado:S});
-    sync.ultimo = Date.now(); sync.error = null;
+    sync.base = S.rev; sync.ultimo = Date.now(); sync.error = null;
     if(sync.cambios===n) sync.pendiente = false;
   }catch(e){ sync.error = String(e.message||e); }
   subiendo = false; guardarSync(); pintarSync();
-  if(sync.pendiente && !sync.error) setTimeout(subir, 500);
+  if(sync.pendiente && !sync.error && !sync.conflicto) setTimeout(subir, 500);
+}
+/* sustituir los datos de este móvil por los de Drive (se guarda antes una copia de los de este móvil) */
+function aplicarDrive(dr, texto){
+  try{ localStorage.setItem('mant-copia-antes-drive', JSON.stringify({fecha:Date.now(), estado:S})); }catch(e){}
+  if(typeof rutaAb!=='undefined'){ rutaAb = null; rutaUlt = null; rutaFin = null; }
+  S = dr.estado; migrar();
+  sync.base = dr.rev; sync.pendiente = false; sync.conflicto = null; sync.error = null; sync.ultimo = Date.now();
+  guardarSync(); guardarLocal();
+  if(seccion==='maquinas') maqFicha = null; if(seccion==='campos') campoFicha = null;
+  pintar(); pintarSync(); if(typeof notiSesion==='function') notiSesion(true);
+  toast(texto || 'Puesto al día desde Drive', 3500);
+}
+let comprobando = false, ultComprobar = 0;
+async function comprobarDrive(forzar){
+  if(!cfg.url || !cfg.clave || !navigator.onLine || comprobando || subiendo) return;
+  if(sync.conflicto){ pintarSync(); return; }
+  if(sync.pendiente){ subir(); return; }
+  if(!forzar && Date.now()-ultComprobar < 2*MIN1) return;
+  comprobando = true; ultComprobar = Date.now();
+  const n = sync.cambios;
+  try{
+    const dr = await leerDrive();
+    if(dr.estado && !sync.pendiente && sync.cambios===n){
+      let bajar = false;
+      if(sync.base == null){
+        if(dr.rev > 0 && dr.disp !== DISP && (sync.ultimo || !tieneDatos(S))) bajar = true;
+        else if(!sync.ultimo && tieneDatos(S) && tieneDatos(dr.estado)) { sync.conflicto = {rev:dr.rev, disp:dr.disp||null, fecha:dr.fecha||null}; guardarSync(); pintarSync(); if(!hojaAbierta) hojaConflicto(dr); }
+        else if(sync.ultimo || !tieneDatos(S)) { if(!tieneDatos(S)) bajar = true; else { sync.base = dr.rev; guardarSync(); } }
+      } else if(dr.rev > sync.base) bajar = true;
+      if(bajar){
+        if(hojaAbierta) ultComprobar = 0;   /* con una ventana abierta, se deja para luego */
+        else aplicarDrive(dr, 'Puesto al día desde Drive');
+      }
+    }
+  }catch(e){}
+  comprobando = false;
+}
+const quienDrive = c => c && c.disp && c.disp===DISP ? 'este móvil' : 'otro móvil';
+async function hojaConflicto(dr){
+  if(hojaAbierta && !$('#confl')) { pintarSync(); return; }
+  if(!dr){
+    abrirHoja(`<h3 id="confl">Cambios en dos sitios</h3><p class="nota">Mirando Drive…</p>`);
+    try{ dr = await leerDrive(); }catch(e){ abrirHoja(`<h3 id="confl">Cambios en dos sitios</h3><p class="nota">No se ha podido leer Drive: ${esc(String(e.message||e))}</p><div class="acciones"><button id="cn">Cerrar</button></div>`,()=>{ $('#cn').onclick=()=>cerrarHoja(); }); return; }
+    if(!hayConflicto(dr)){ sync.conflicto = null; guardarSync(); cerrarHoja(); subir(); toast('Ya no hay conflicto: subiendo'); return; }
+  }
+  const cuando = dr.fecha ? `${fechaCorta(dr.fecha)} a las ${hhmm(dr.fecha)}` : 'antes';
+  const vacio = !tieneDatos(S);
+  abrirHoja(`<h3 id="confl">${vacio ? 'Drive ya tiene datos' : 'Cambios en dos sitios'}</h3>
+    <p>${vacio ? `Este móvil todavía no tiene datos y Drive sí (de ${quienDrive(dr)}, ${esc(cuando)}). Lo normal es quedarse con los de Drive.` : `Este móvil tiene cosas sin subir y Drive tiene una versión más nueva, de ${quienDrive(dr)} (${esc(cuando)}). La app no puede juntarlas: elige cuál se queda.`}</p>
+    <p class="nota">La que no elijas se pierde. Si eliges Drive, se guarda en este móvil una copia de lo que tenía.</p>
+    <div class="acciones" style="flex-direction:column"><button class="${vacio?'':'ok'}" id="cfM">Quedarme con los de este móvil${vacio?' (borra Drive)':''}</button><button class="${vacio?'ok':''}" id="cfD">Quedarme con los de Drive</button><button id="cfN">Ahora no</button></div>`,()=>{
+    $('#cfM').onclick=()=>{ sync.base = dr.rev; sync.conflicto = null; sync.pendiente = true; sync.cambios++; guardarSync(); cerrarHoja(); subir(); toast('Se quedan los de este móvil: subiendo'); };
+    $('#cfD').onclick=()=>{ cerrarHoja(); aplicarDrive(dr, 'Se quedan los de Drive. Lo de este móvil queda en una copia'); };
+    $('#cfN').onclick=()=>{ cerrarHoja(); toast('No se sube nada hasta que elijas. Toca la nube para elegir', 3500); };
+  });
 }
 function pintarSync(){
   const b = $('#sync'); if(!b) return;
   let t, ok=false;
   if(!cfg.url || !cfg.clave) t='Sin conectar a Drive';
+  else if(sync.conflicto) t='Cambios en este móvil y en Drive: toca para elegir';
   else if(subiendo) t='Subiendo\u2026';
   else if(sync.pendiente && !navigator.onLine) t='Sin cobertura, pendiente de subir';
   else if(sync.pendiente && sync.error) t='Error al subir, toca para ver';
@@ -3361,15 +3447,16 @@ function pintarSync(){
 }
 function textoSync(){
   if(!cfg.url || !cfg.clave) return 'Sin conectar a Drive';
+  if(sync.conflicto) return 'Cambios en este móvil y en Drive, sin elegir';
   if(subiendo) return 'Subiendo\u2026';
   if(sync.pendiente && !navigator.onLine) return 'Sin cobertura, pendiente de subir';
   if(sync.pendiente && sync.error) return 'Error al subir';
   if(sync.pendiente) return 'Pendiente de subir';
   return 'Todo subido';
 }
-window.addEventListener('online', ()=>{ pintarSync(); subir(); });
+window.addEventListener('online', ()=>{ pintarSync(); comprobarDrive(true); });
 window.addEventListener('offline', pintarSync);
-document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='visible' && sync.pendiente) subir(); });
+document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='visible') comprobarDrive(); });
 
 const notiPermiso = () => ('Notification' in window) ? Notification.permission : 'no';
 function textoNoti(){
@@ -3832,7 +3919,7 @@ const RUTA_PASO = 100, RUTA_HUECO = 3*MIN1, RUTA_TOL = 10, SEN_VIEJA = 30000;
 var gpsSen = null, gpsVelo = null, rutaAb = null, rutaUlt = null, rutaFin = null, wl = null, actx = null;
 var sinJor = {n:0, ult:0};
 const r5 = x => Math.round(x*1e5);
-function guardarLigero(){ try{ localStorage.setItem(CLAVE, JSON.stringify(S)); }catch(e){} }
+function guardarLigero(){ try{ localStorage.setItem(CLAVE, JSON.stringify(S)); }catch(e){} if(typeof sync!=='undefined' && !sync.pendiente){ sync.pendiente = true; sync.cambios++; guardarSync(); pintarSync(); } }
 /* ruta compacta: [lat, lon, 0, dlat, dlon, dseg, ...] en cienmilésimas de grado (≈1 m) y segundos */
 function rutaPuntos(seg){
   const p = seg.p, out = []; let la=0, lo=0, t=seg.a;
@@ -4269,7 +4356,7 @@ document.addEventListener('keydown', e=>{ if(e.key==='Escape') cerrarMenuGear();
 $('#btnGear').innerHTML = I.gear;
 $('#btnGear').onclick = abrirMenuGear;
 $('#btnCuad').onclick = ()=>{ cuadCarpeta=null; cuadBuscar=''; irA('cuaderno'); };
-$('#sync').onclick = ()=>hojaAjustes('drive');
+$('#sync').onclick = ()=>{ if(sync.conflicto) hojaConflicto(); else hojaAjustes('drive'); };
 
 /* ---- campaña (la usarán las fichas de máquina) ---- */
 function campanaDesdeMs(){
@@ -4305,7 +4392,7 @@ function ajMenu(){
 }
 function ajNov(){ cerrarHoja(); setTimeout(hojaNovedades,150); }
 function ajDrive(){
-  const est = sync.error ? `Último error: ${sync.error}` : sync.ultimo ? `Última subida: ${fecha(sync.ultimo)}` : 'Todavía no se ha subido nada.';
+  const est = (sync.error ? `Último error: ${sync.error}` : sync.ultimo ? `Última vez con Drive: ${fecha(sync.ultimo)}` : 'Todavía no se ha subido nada.') + (sync.base!=null ? ` Versión de Drive en este móvil: ${sync.base}.` : '');
   abrirHoja(`${ajCabecera('Puente con Drive')}
     <label class="f" for="cu">Dirección del puente</label><input id="cu" value="${cfg.url.replace(/"/g,'&quot;')}" placeholder="https://script.google.com/macros/s/.../exec" autocomplete="off">
     <label class="f" for="ck">Clave</label><input id="ck" value="${cfg.clave.replace(/"/g,'&quot;')}" autocomplete="off">
@@ -4332,9 +4419,10 @@ function ajDrive(){
             try{
               const j = await llamar({accion:'leer'});
               if(!j.estado){ $('#err3').textContent='La hoja todavía no tiene datos guardados.'; $('#si2').disabled=false; return; }
+              try{ localStorage.setItem('mant-copia-antes-drive', JSON.stringify({fecha:Date.now(), estado:S})); }catch(e){}
               S = j.estado;
               migrar();
-              sync.pendiente=false; sync.error=null; sync.ultimo=Date.now(); guardarSync();
+              sync.pendiente=false; sync.error=null; sync.conflicto=null; sync.base=j.estado.rev||0; sync.ultimo=Date.now(); guardarSync();
               cerrarHoja(); seccion='inicio'; pintar(); pintarSync(); toast('Datos recuperados');
             }catch(e){ $('#err3').textContent='No se ha podido: '+(e.message||e); $('#si2').disabled=false; }
           };
@@ -5000,7 +5088,7 @@ if('serviceWorker' in navigator){
 }
 /* si se quitó la notificación deslizando, vuelve al abrir la app */
 document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='visible'){ notiSesion(true); setTimeout(comprobarOlvidada, 600); } });
-if(sync.pendiente) setTimeout(subir, 1500);
+setTimeout(()=>comprobarDrive(true), 1500);
 setTimeout(comprobarOlvidada, 1200);
 try{
   if(localStorage.getItem('mant-app-version')!==VERSION_APP){
