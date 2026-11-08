@@ -398,6 +398,62 @@ details.arr{margin:12px 0 0} details.arr summary{cursor:pointer;color:var(--text
 .ultv{margin:8px 2px 0;font-size:14px;color:var(--text2);text-align:center}
 .parteluca{border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin:0 0 10px;background:var(--card)}
 .parteluca pre{margin:0;white-space:pre-wrap;font:inherit;font-size:14px}
+/* ---------- móvil en horizontal (1.4.2.1): menú a la derecha; Inicio fijo, a dos columnas ---------- */
+@media (orientation:landscape) and (max-height:600px){
+  .navwrap{top:0;bottom:0;left:auto;right:0;width:calc(78px + env(safe-area-inset-right,0px));border-top:0;border-left:1px solid var(--line);padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) 0}
+  .navin{max-width:none;height:100%;flex-direction:column}
+  .nav{flex-direction:column;overflow:hidden;mask-image:none;-webkit-mask-image:none;scroll-snap-type:none}
+  .nav button{flex:1 1 0;min-height:0;padding:2px 0;font-size:10.5px;justify-content:center;gap:1px}
+  .nav button svg{width:22px;height:22px}
+  .nav .nb{top:2px}
+  .app{max-width:none;margin:0;padding-left:env(safe-area-inset-left,0px);padding-right:calc(78px + env(safe-area-inset-right,0px))}
+  .top{padding:8px 18px 4px}
+  main{padding:4px 16px 20px}
+  .toast{bottom:16px;left:calc(50% - 39px)}
+  .hoja{max-height:94%}
+  body.en-inicio{overflow:hidden}
+  body.en-inicio .app{height:100%;min-height:0;overflow:hidden}
+  body.en-inicio main{min-height:0;overflow:hidden;display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);column-gap:22px;padding-bottom:max(8px,env(safe-area-inset-bottom,0px))}
+  .hz-izq,.hz-der{display:flex;flex-direction:column;min-height:0;overflow:hidden}
+  .hz-izq{justify-content:center;position:relative}
+  .hz-izq .aviso-largo{position:absolute;left:0;right:0;top:0;margin:0;z-index:2}
+  .hz-izq .reloj{margin:0 0 2px;font-size:40px;line-height:1.15}
+  .hz-izq .totales{grid-template-columns:1fr 74px 1fr;margin:8px 0 0}
+  .hz-izq .controles{margin:10px 0 0}
+  .hz-izq .btn{padding:10px 6px}
+  .hz-izq .stop{width:74px;height:74px}
+  .hz-izq .centro{gap:6px}
+  .hz-der .maq{padding:7px 12px}
+  .hz-der .maq .n{font-size:15px}
+  .hz-der .maq .ico{transform:scale(.85)}
+  .hz-der .ultv{margin:4px 2px 0;font-size:12.5px;text-align:left}
+  .hz-der .hoyl{margin:6px 2px 0;font-size:13px;text-align:left}
+  .hz-der .salir{margin:8px 0 0;padding:8px;font-size:15px}
+  .hz-der .rapidos{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin:6px 0 0}
+  .hz-der .rapidos .chip:last-child:nth-child(odd){grid-column:auto}
+  .hz-der .chip{padding:8px 4px;font-size:13px;gap:5px;line-height:1.15;text-align:center}
+  .hz-der .chip svg{width:18px;height:18px;flex:none}
+  .hz-der .avisos{margin:8px 0 0;padding:0 12px;min-height:0;overflow:hidden}
+  .hz-der .avisos h2{margin:6px 0 0;font-size:12.5px}
+  .hz-der .av ~ .av{display:none}
+  .hz-der .av{padding:4px 0 6px;font-size:14px;line-height:1.3;white-space:nowrap}
+  .hz-der .av > span:not([class]){min-width:0;overflow:hidden;text-overflow:ellipsis}
+  .hz-der .av br,.hz-der .av > span:not([class]) > span,.hz-der .av .ahora{display:none}
+  .hz-der .avisos .vacio{padding:6px 0 8px;font-size:14px}
+  .hz-der > *{flex:none}
+  .hz-der > .avisos{flex:0 1 auto}
+}
+@media (orientation:landscape) and (max-height:600px) and (max-width:760px){
+  .hz-der .chip{flex-direction:column;gap:2px;padding:5px 2px;font-size:11.5px;line-height:1.1}
+  .hz-der .salir{padding:6px;margin-top:6px}
+  .hz-der .hoyl{margin-top:4px}
+  .hz-der .maq{padding:5px 10px}
+  .hz-der .maq .s{font-size:12px}
+  .hz-der .hoyl{font-size:12.5px}
+}
+@media (orientation:landscape) and (max-height:340px){
+  .hz-der .ultv{display:none}
+}
 </style>
 </head>
 <body>
@@ -457,7 +513,7 @@ const SECCIONES = [
 
 const H = 3600000;
 const CLAVE = 'mant-app-v1';
-const VERSION_APP = '1.4.2';
+const VERSION_APP = '1.4.2.1';
 
 function estadoInicial(){
   return {
@@ -1174,6 +1230,16 @@ function irA(id, desdeHistorial){
   seccion=id; pintar();
 }
 
+/* Móvil en horizontal (1.4.2.1): Inicio a dos columnas, fijo; el resto igual, con el menú a la derecha. */
+const HORIZ = window.matchMedia('(orientation: landscape) and (max-height: 600px)');
+function dosColumnasInicio(){
+  const v = $('#vista'), izq = document.createElement('div'), der = document.createElement('div');
+  izq.className = 'hz-izq'; der.className = 'hz-der';
+  ['#largo','#reloj','.reloj-sub','.totales','.controles'].forEach(q=>{ const e = v.querySelector(':scope > '+q); if(e) izq.appendChild(e); });
+  [...v.children].forEach(e=>{ if(e!==izq) der.appendChild(e); });
+  v.append(izq, der);
+}
+(HORIZ.addEventListener ? HORIZ.addEventListener.bind(HORIZ,'change') : HORIZ.addListener.bind(HORIZ))(()=>{ if(seccion==='inicio') pintar(); });
 function pintarInicio(){
   if(!tractor(S.sel.tractor) && S.tractores.length){ S.sel.tractor=S.tractores[0].id; }
   const t = tractor(S.sel.tractor), a = apero(S.sel.apero);
@@ -1222,6 +1288,7 @@ function pintarInicio(){
       ${tarjetas ? `<div style="padding-top:6px">${tarjetas}</div>` : ''}
       ${relevantes.length ? relevantes.map(({m,e})=>`<div class="av"><span class="dot ${e||'n'}" aria-label="${e==='r'?'Pasado':e==='y'?'Inminente':''}"></span>${marcaM(m)?'<span class="mk" title="Según el manual ya tocaría">M</span>':''}<span>${m.nombre}<br><span style="font-size:13px;color:var(--text2)">${m.maq===t.id?t.nombre:a.nombre}${marcaM(m)?', manual: le tocaría ya':''}</span><br><button class="ahora" data-ahora="${m.id}">Hecho ahora</button></span><span class="q">${textoMant(m)}</span></div>`).join('') : (tarjetas ? '' : '<div class="vacio">Todo al día con esta máquina y este apero.</div>')}
     </section>`;
+  if(HORIZ.matches) dosColumnasInicio();
   $('#bt').onclick=hojaTractor; $('#ba').onclick=hojaApero; enlazarAhora();
   pulsacionLarga($('#bc'), ()=>pulsarModo('carretera'), ()=>hojaHora('modo','carretera'));
   pulsacionLarga($('#bf'), ()=>pulsarModo('campo'), ()=>hojaHora('modo','campo'));
@@ -2312,6 +2379,7 @@ function pintar(){
   const d = new Date();
   $('#fecha').textContent = fechaArriba();
   pintarNav();
+  document.body.classList.toggle('en-inicio', seccion==='inicio');
   if(seccion==='inicio') pintarInicio();
   else if(seccion==='mant') pintarMant();
   else if(seccion==='gasoil'){ pintarComb(); pijadicaComb(); }
@@ -3123,6 +3191,9 @@ function pintarAvisos(){
 
 /* ---------- novedades de la versión ---------- */
 const NOVEDADES = [
+  'Prueba del móvil en horizontal: al girarlo, el menú pasa a la derecha. Inicio queda fijo, sin subir ni bajar, a dos columnas: a la izquierda el reloj y los botones; a la derecha el tractor y el apero, las horas de hoy, Antes de salir, Horómetro, Repostar, Código de fallo y el aviso más urgente.'
+];
+const NOVEDADES_142 = [
   'Jornada: Inicio empieza la jornada y Parado cuenta como un tramo más. En Días se ve la jornada entera, con campo, carretera y parado.',
   'Agenda de arrastrar: para cambiar horas, pintar tramos y añadir sesiones a mano. Si dejas una sesión abierta olvidada, la app te propone cerrarla.',
   'Días: los tramos dudosos se marcan para revisar. Si repites un campo, puedes contar las pasadas. Cambio automático Campo y Carretera por GPS (se quita en Ajustes).',
