@@ -19,6 +19,7 @@
   --stop:#B3261E; --stop-off:#D9A6A2;
   --rojo:#E24B4A; --amarillo:#EF9F27;
   --scrim:rgba(20,25,20,.45);
+  --gpsos:#2F6DB5;
   color-scheme:light;
   box-sizing:border-box;
   padding-top:env(safe-area-inset-top,0px);
@@ -31,6 +32,7 @@
     --tierra:#D69A45; --tierra-bg:#3A2C17; --tierra-on:#1A1206;
     --stop:#E0453B; --stop-off:#5A2E2B;
     --scrim:rgba(0,0,0,.6);
+    --gpsos:#79AEEA;
     color-scheme:dark;
   }
 }
@@ -40,6 +42,7 @@
   --tierra:#D69A45; --tierra-bg:#3A2C17; --tierra-on:#1A1206;
   --stop:#E0453B; --stop-off:#5A2E2B;
   --scrim:rgba(0,0,0,.6);
+  --gpsos:#79AEEA;
   color-scheme:dark;
 }
 *,*::before,*::after{box-sizing:border-box}
@@ -172,6 +175,26 @@ label.f{display:block;font-size:14px;color:var(--text2);margin:10px 0 4px}
 .dep .s{font-size:14px;color:var(--text2)}
 .dep .des{margin-top:10px;padding:8px 10px;border-radius:10px;font-size:14px;background:var(--bg)}
 .dep .des.alerta{background:var(--tierra-bg);color:var(--tierra)}
+.dep.gp{margin-top:14px}
+.gp .gpsen{margin-top:10px;padding:8px 10px;border-radius:10px;font-size:14px;background:var(--bg);color:var(--text2)}
+.gp .gpsen.ll{background:var(--tierra-bg);color:var(--tierra)}
+.gp .gpsen.es{background:var(--campo-bg);color:var(--campo)}
+.gp .gpper{display:flex;gap:6px;margin:12px 0 4px}
+.gp .gpb{flex:1;padding:6px 4px;border-radius:999px;border:1px solid var(--line);background:var(--card);font-size:13px;color:var(--text2);cursor:pointer}
+.gp .gpb.act{background:var(--campo-bg);color:var(--campo);border-color:var(--campo)}
+.gp .gpgraf svg{display:block;width:100%;height:auto;touch-action:pan-y}
+.gp .gpgraf .gr{stroke:var(--line);stroke-width:1}
+.gp .gpgraf .ej{font-size:10px;fill:var(--text2)}
+.gp .gpgraf .lp{fill:none;stroke-width:2;stroke-linejoin:round}
+.gp .gpgraf .lb{fill:none;stroke:var(--text2);stroke-width:1;opacity:.75}
+.gp .gpgraf .cur{stroke:var(--text);stroke-width:1;stroke-dasharray:3 3}
+.gp .gplee{font-size:13px;min-height:18px;margin-top:2px}
+.gp .gpley{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:13px;color:var(--text2);margin-top:6px}
+.gp .gpley i{display:inline-block;width:12px;height:3px;border-radius:2px;margin-right:5px;vertical-align:3px}
+.gp .gpley i.ib{background:var(--text2);height:1px;opacity:.75}
+.gp details.gpop{margin-top:10px;border-top:1px solid var(--line);padding-top:6px}
+.gp details.gpop summary{cursor:pointer;font-size:14px;padding:6px 0}
+.gp details.gpop p{font-size:14px;margin:6px 0 0}
 .barra{height:8px;border-radius:999px;background:var(--bg);overflow:hidden;margin:8px 0 6px}
 .barra span{display:block;height:100%;background:var(--campo)}
 .acc3{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0 0}
@@ -546,7 +569,7 @@ const SECCIONES = [
 
 const H = 3600000;
 const CLAVE = 'mant-app-v1';
-const VERSION_APP = '1.4.2.3';
+const VERSION_APP = '1.4.2.4';
 
 function estadoInicial(){
   return {
@@ -1912,6 +1935,7 @@ function pintarComb(){
       <button class="chip" id="bpd">Pedido a domicilio</button>
       ${C.iniciado?`<button class="chip" id="bot">Otra salida del depósito</button>`:''}
     </div>
+    ${seccionPrecioGas()}
     ${textoPrecios()}
     ${seccionLecturas()}
     ${seccionGasoilCampos()}
@@ -1922,6 +1946,7 @@ function pintarComb(){
   $('#bpd').onclick=()=> C.iniciado ? hojaPedido() : hojaInicioDeposito();
   if($('#bot')) $('#bot').onclick=hojaOtraSalida;
   document.querySelectorAll('[data-comp]').forEach(b=>b.onclick=()=>hojaCompletar(b.dataset.comp));
+  enlazarPrecioGas();
 }
 
 function leerNum(id){ const v=$('#'+id).value; return v==='' ? null : parseFloat(v); }
@@ -3194,7 +3219,7 @@ function textoPrecios(){
 /* Avisos: todo lo amarillo y rojo de todas las máquinas, también lo del taller, por cuándo toca */
 const maqExiste = id => !!(tractor(id) || apero(id));
 const listaAvisos = () => S.mants.filter(m=>maqExiste(m.maq)).map(info).filter(x=>x.e || marcaM(x.m));
-function cuentaAvisos(){ const l = listaAvisos(); return {n:l.length + averiasPendTractor().length, r:l.some(x=>x.e==='r')}; }
+function cuentaAvisos(){ const l = listaAvisos(); return {n:l.length + averiasPendTractor().length + (avisoDeposito()?1:0), r:l.some(x=>x.e==='r')}; }
 /* horas al día que ha trabajado una máquina en los últimos 30 días */
 function ritmoDiario(id){
   const d0 = Date.now()-30*DIA, esT = !!tractor(id); let h = 0;
@@ -3213,19 +3238,193 @@ function pintarAvisos(){
   }).sort((a,b)=> a.g-b.g || (a.dias===b.dias ? (a.r-b.r)||porUrgencia(a,b) : a.dias-b.dias));
   const fila = x => `<div class="avw"><button class="mov" data-m="${x.m.id}" style="align-items:center"><span class="dot ${x.e||'n'}"></span>${marcaM(x.m)?'<span class="mk" title="Según el manual ya tocaría">M</span>':''}<span class="fx"><span class="n">${esc(x.m.nombre)}${x.m.quien==='taller'?'<span class="tag">Taller</span>':''}</span><span class="s" style="font-size:13px;color:var(--text2)">${esc(nombreMaq(x.m.maq))}${x.porHoras?`, unos ${fmtDias(x.dias)} a tu ritmo`:''}${!x.e&&marcaM(x.m)?', manual: le tocaría ya':''}</span></span><span class="der">${textoMant(x.m)}</span></button><div class="ahw"><button class="ahora" data-ahora="${x.m.id}">Hecho ahora</button></div></div>`;
   const r = l.filter(x=>x.e==='r').length, y = l.filter(x=>x.e==='y').length;
+  const adep = avisoDeposito();
   $('#vista').innerHTML = `<h2 class="secc" style="margin-top:6px">${l.length ? [r?`${r} ${r===1?'pasado':'pasados'}`:'', y?`${y} a punto`:'', l.length-r-y?`${l.length-r-y} con M`:''].filter(Boolean).join(', ') : 'Avisos'}</h2>
     ${botonTallerGrande()}
+    ${adep ? `<div class="lista" style="margin-bottom:10px">${filaAvisoDeposito(adep)}</div>` : ''}
     <div class="lista">${l.length ? l.map(fila).join('') : '<div class="vacio" style="padding:16px">Todo al día en todas tus máquinas.</div>'}</div>
     ${averiasPendTractor().length ? `<h2 class="secc">Averías pendientes (${averiasPendTractor().length})</h2><div class="lista">${averiasPendTractor().sort((a,b)=>b.fecha-a.fecha).map(filaAveria).join('')}</div>` : ''}
     <p class="nota">Todas tus máquinas y aperos, también lo del taller. Primero lo pasado y después lo que está a punto, por cuándo toca: lo que va por horas se calcula con lo que has trabajado esa máquina en los últimos 30 días. Toca uno para verlo.</p>`;
   document.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>hojaDetalle(b.dataset.m));
   document.querySelectorAll('[data-av]').forEach(b=>b.onclick=()=>hojaAveria(b.dataset.av));
+  if($('#avdep')) $('#avdep').onclick=()=>irA('gasoil');
   $('#btaller').onclick=()=>abrirTallerDe(S.sel.tractor && tractor(S.sel.tractor) ? S.sel.tractor : (S.tractores[0]||{}).id);
   enlazarAhora();
 }
 
+/* ---------- 1.4.2.4: precio del gasoil (sistema aparte «Estudio precios gasoil») ----------
+   La app pide los datos a la dirección web del script del gasoil (con su clave), al abrir la app
+   y como mucho cada 3 horas. Se guardan en el móvil aparte (mant-gasoil): no van a Drive. */
+const GP_CLAVE = 'mant-gasoil', GP_CADA = 3*H, GP_UMBRAL = 0.25;
+let gp = {t:null, d:null, error:null, tError:null};
+try{ gp = Object.assign(gp, JSON.parse(localStorage.getItem(GP_CLAVE))||{}); }catch(e){}
+let gpPeriodo = 90, gpPidiendo = false;
+const gpConfig = () => !!(cfg.gUrl && cfg.gClave);
+function gpGuardar(){ try{ localStorage.setItem(GP_CLAVE, JSON.stringify(gp)); }catch(e){} }
+async function pedirGasoil(forzar){
+  if(!gpConfig() || gpPidiendo) return false;
+  if(!forzar && gp.t && Date.now()-gp.t < GP_CADA) return false;
+  if(!forzar && gp.tError && Date.now()-gp.tError < 10*60*1000) return false;
+  if(typeof navigator!=='undefined' && navigator.onLine===false) return false;
+  gpPidiendo = true;
+  try{
+    const r = await fetch(cfg.gUrl, {method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body:JSON.stringify({accion:'datos', clave:cfg.gClave})});
+    const j = await r.json();
+    if(!j.ok) throw new Error(j.error || 'Error desconocido');
+    const antes = gp.d && gp.d.generado;
+    gp = {t:Date.now(), d:j, error:null, tError:null}; gpGuardar();
+    if(seccion==='gasoil') pintar(); else pintarNav();
+    return antes!==j.generado || true;
+  }catch(e){
+    gp.error = String(e && e.message || e); gp.tError = Date.now(); gpGuardar();
+    if(seccion==='gasoil') pintar();
+    throw e;
+  }finally{ gpPidiendo = false; }
+}
+function pedirGasoilCallado(forzar){ pedirGasoil(forzar).catch(()=>{}); }
+
+/* aviso del depósito de la bajera: ≈ 25 % o menos de la capacidad */
+function avisoDeposito(){
+  const C = calcDeposito();
+  if(!C.iniciado || !C.cap) return null;
+  const st = Math.max(0, C.stock);
+  return st <= C.cap*GP_UMBRAL ? {st, cap:C.cap, pct:st/C.cap*100} : null;
+}
+const gpSenal = () => gp.d && gp.d.analisis && gp.d.analisis.senal ? gp.d.analisis.senal : null;
+const gpOpinion = () => gp.d && gp.d.opinion && gp.d.opinion.opinion ? gp.d.opinion.opinion : null;
+function filaAvisoDeposito(a){
+  const sen = gpSenal(), op = gpOpinion();
+  const txt = [sen ? `Señal: ${sen}` : (gpConfig() ? 'Señal: sin datos todavía' : null), op ? `IA: ${op}` : null].filter(Boolean).join(' · ');
+  return `<button class="mov" id="avdep" style="align-items:center"><span class="dot y"></span><span class="fx"><span class="n">Depósito de la bajera ≈ ${Math.round(a.st).toLocaleString('es-ES')} L</span><span class="s" style="font-size:13px;color:var(--text2)">${Math.round(a.pct)} % de ${a.cap.toLocaleString('es-ES')} L. Toca llenar en los próximos días${txt?'. '+esc(txt):''}</span></span><span class="der">›</span></button>`;
+}
+
+const gpNum = (x, d) => x==null ? '–' : Number(x).toLocaleString('es-ES',{minimumFractionDigits:d, maximumFractionDigits:d});
+const gpCent = x => x==null ? '–' : (x>0?'+':x<0?'−':'')+gpNum(Math.abs(x),1)+' c';
+const gpDiaTxt = iso => { const p=iso.split('-'); return new Date(+p[0],+p[1]-1,+p[2]).toLocaleDateString('es-ES',{day:'numeric',month:'short'}).replace('.',''); };
+const GP_COLORES = {'9551':'var(--campo)','9446':'var(--tierra)','1518':'var(--gpsos)'};
+/* orden fijo: Cáseda, Sangüesa, Sos (las claves numéricas de un objeto salen ordenadas de menor a mayor) */
+const gpIds = d => { const g=Object.keys(d.gasolineras||{}); return ['9551','9446','1518'].filter(x=>g.includes(x)).concat(g.filter(x=>!['9551','9446','1518'].includes(x))); };
+/* precio vigente en un día: el de ese día o el último anterior (los precios se mantienen hasta que cambian) */
+const gpVigente = (arr, i) => { for(let k=i;k>=0;k--) if(arr[k]!=null) return arr[k]; return null; };
+function gpTramo(){
+  const d = gp.d; if(!d || !d.dias || !d.dias.length) return null;
+  const fin = d.dias[d.dias.length-1], pf = fin.split('-');
+  const lim = new Date(+pf[0],+pf[1]-1,+pf[2]-gpPeriodo+1);
+  const limIso = `${lim.getFullYear()}-${String(lim.getMonth()+1).padStart(2,'0')}-${String(lim.getDate()).padStart(2,'0')}`;
+  const i0 = d.dias.findIndex(x=>x>=limIso);
+  return {i0: i0<0?0:i0, i1:d.dias.length-1, limIso, fin};
+}
+function graficoGasoil(){
+  const d = gp.d, T = gpTramo(); if(!T) return '';
+  const W=340, Hh=190, L=40, R=40, Tp=10, B=22, w=W-L-R, h=Hh-Tp-B;
+  const ids = gpIds(d);
+  const ms = iso => { const p=iso.split('-'); return new Date(+p[0],+p[1]-1,+p[2]).getTime(); };
+  const t0 = ms(T.limIso), t1 = ms(T.fin), span = Math.max(1, t1-t0);
+  const X = iso => L + (ms(iso)-t0)/span*w;
+  let pv=[], bv=[];
+  for(let i=T.i0;i<=T.i1;i++){ ids.forEach(id=>{ const v=d.precios[id][i]; if(v!=null) pv.push(v); }); if(d.brent[i]!=null) bv.push(d.brent[i]); }
+  if(!pv.length) return '<p class="s">Sin precios en este periodo.</p>';
+  let pmin=Math.min(...pv), pmax=Math.max(...pv); if(pmax-pmin<0.02){ pmin-=0.01; pmax+=0.01; } const pp=(pmax-pmin)*0.08; pmin-=pp; pmax+=pp;
+  const Y = v => Tp + (pmax-v)/(pmax-pmin)*h;
+  let bmin=0,bmax=1, YB=null;
+  if(bv.length){ bmin=Math.min(...bv); bmax=Math.max(...bv); if(bmax-bmin<1){ bmin-=0.5; bmax+=0.5; } const bp=(bmax-bmin)*0.08; bmin-=bp; bmax+=bp; YB = v => Tp + (bmax-v)/(bmax-bmin)*h; }
+  const linea = (vals, Yf) => { const pts=[]; for(let i=T.i0;i<=T.i1;i++){ const v=vals[i]; if(v!=null) pts.push(`${X(d.dias[i]).toFixed(1)},${Yf(v).toFixed(1)}`); } return pts.join(' '); };
+  let rejilla='';
+  for(let k=0;k<=3;k++){ const v=pmin+(pmax-pmin)*k/3, y=Y(v); rejilla += `<line x1="${L}" x2="${W-R}" y1="${y.toFixed(1)}" y2="${y.toFixed(1)}" class="gr"/><text x="${L-4}" y="${(y+3.5).toFixed(1)}" text-anchor="end" class="ej">${gpNum(v,3)}</text>`;
+    if(YB){ const vb=bmin+(bmax-bmin)*k/3; rejilla += `<text x="${W-R+4}" y="${(YB(vb)+3.5).toFixed(1)}" class="ej eb">${gpNum(vb, bmax-bmin<6?1:0)}</text>`; } }
+  const fechas = [T.limIso, d.dias[Math.round((T.i0+T.i1)/2)], T.fin];
+  const ejeX = fechas.map((f,k)=>`<text x="${(k===0?L:k===2?W-R:X(f)).toFixed(1)}" y="${Hh-6}" text-anchor="${k===0?'start':k===2?'end':'middle'}" class="ej">${gpDiaTxt(f)}</text>`).join('');
+  const lineas = (YB ? `<polyline points="${linea(d.brent,YB)}" class="lb"/>` : '') + ids.map(id=>`<polyline points="${linea(d.precios[id],Y)}" class="lp" style="stroke:${GP_COLORES[id]||'var(--text)'}"/>`).join('');
+  return `<svg id="gpsvg" viewBox="0 0 ${W} ${Hh}" role="img" aria-label="Gráfico del precio del gasóleo B en las tres gasolineras y del Brent">${rejilla}${ejeX}${lineas}<line id="gpcur" x1="0" x2="0" y1="${Tp}" y2="${Tp+h}" class="cur" style="display:none"/>
+    <rect x="${L}" y="${Tp}" width="${w}" height="${h}" fill="transparent" id="gptoque"/></svg>`;
+}
+function leyendaGasoil(){
+  const d = gp.d; if(!d) return '';
+  const ids = gpIds(d), ult = id => { const a=d.precios[id]; for(let i=a.length-1;i>=0;i--) if(a[i]!=null) return a[i]; return null; };
+  const ref = ult(d.referencia||'9551');
+  return `<div class="gpley">${ids.map(id=>{ const v=ult(id), dif = (id!==(d.referencia||'9551') && v!=null && ref!=null) ? ` (${gpCent(Math.round((v-ref)*1000)/10)})` : ''; return `<span><i style="background:${GP_COLORES[id]||'var(--text)'}"></i>${esc(d.gasolineras[id])} ${gpNum(v,3)}${dif}</span>`; }).join('')}<span><i class="ib"></i>Brent (€/barril, escala dcha.)</span></div>`;
+}
+function seccionPrecioGas(){
+  if(!gpConfig() && !gp.d) return `<section class="dep gp"><div class="tit">Precio del gasóleo B</div><p class="s" style="margin:6px 0 10px">Para ver el precio de Cáseda, Sangüesa y Sos, la señal y la opinión de la IA, pon la dirección y la clave del script del gasoil.</p><button class="chip" id="gpcfg" style="width:100%">Ajustes del precio del gasoil</button></section>`;
+  const d = gp.d;
+  if(!d) return `<section class="dep gp"><div class="tit">Precio del gasóleo B</div><p class="s" style="margin:6px 0 0">${gp.error ? 'No se ha podido traer: '+esc(gp.error) : 'Trayendo los datos…'}</p>${gp.error?'<button class="chip" id="gpre" style="width:100%;margin-top:10px">Volver a intentar</button>':''}</section>`;
+  const a = d.analisis || {}, o = d.opinion;
+  const cls = a.senal==='Llenar ya' ? 'll' : a.senal==='Esperar' ? 'es' : 'nn';
+  const nomRef = (d.gasolineras||{})[d.referencia] || 'Cáseda';
+  const per = [[30,'1 mes'],[90,'3 meses'],[365,'1 año']].map(([n,t])=>`<button class="gpb ${gpPeriodo===n?'act':''}" data-gpp="${n}" aria-pressed="${gpPeriodo===n}">${t}</button>`).join('');
+  const viejo = gp.t && Date.now()-gp.t > 24*H;
+  return `<section class="dep gp" aria-label="Precio del gasóleo B">
+    <div class="tit">Precio del gasóleo B en ${esc(nomRef)}</div>
+    <div class="big">${a.precio!=null?gpNum(a.precio,3)+' €/L':'–'}</div>
+    <div class="s">${gpCent(a.c1)} en 1 día · ${gpCent(a.c7)} en 7 días · ${gpCent(a.c30)} en 30 días</div>
+    ${a.senal?`<div class="gpsen ${cls}"><b>Señal: ${esc(a.senal)}</b>${a.motivo?`<br>${esc(a.motivo)}`:''}</div>`:''}
+    <div class="gpper" role="group" aria-label="Periodo del gráfico">${per}</div>
+    <div class="gpgraf">${graficoGasoil()}</div>
+    <div class="gplee s" id="gplee">Toca el gráfico para ver los precios de un día.</div>
+    ${leyendaGasoil()}
+    ${a.min90!=null?`<p class="s" style="margin:10px 0 0">Últimos 90 días en ${esc(nomRef)}: mínimo ${gpNum(a.min90,3)}, mediana ${gpNum(a.med90,3)} y máximo ${gpNum(a.max90,3)} €/L.${a.pctCaros!=null?` El ${gpNum(a.pctCaros,0)} % de esos días estuvo más caro que hoy.`:''}</p>`:''}
+    ${o?`<details class="gpop"><summary>IA: <b>${esc(o.opinion)}</b>${o.confianza?`, confianza ${esc(o.confianza)}`:''}${o.fecha?` · ${esc(o.fecha)}`:''}</summary>${o.resumen?`<p>${esc(o.resumen)}</p>`:''}${o.fuentes?`<p class="s">Fuentes: ${esc(o.fuentes)}</p>`:''}</details>`:''}
+    <p class="nota">${viejo?'<b>Datos de hace más de un día.</b> ':''}Consultado ${gp.t?hace(gp.t):'—'}${a.fecha?`; análisis del ${fechaLarga(a.fecha)} a las ${new Date(a.fecha).toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'})}`:''}.${gp.error?` Último intento sin éxito: ${esc(gp.error)}.`:''} Precios: Ministerio para la Transición Ecológica. Brent: Yahoo Finanzas (no oficial). La señal es una regla sencilla, no una garantía.</p>
+    <button class="chip" id="gpre" style="width:100%;margin-top:8px">${gpPidiendo?'Actualizando…':'Actualizar ahora'}</button>
+  </section>`;
+}
+function enlazarPrecioGas(){
+  if($('#gpcfg')) $('#gpcfg').onclick=()=>hojaAjustes('gp');
+  if($('#gpre')) $('#gpre').onclick=()=>{ $('#gpre').textContent='Actualizando…'; $('#gpre').disabled=true; pedirGasoil(true).then(()=>toast('Precio del gasoil al día')).catch(e=>{ toast('No se ha podido: '+(e.message||e)); pintar(); }); };
+  document.querySelectorAll('[data-gpp]').forEach(b=>b.onclick=()=>{ gpPeriodo=+b.dataset.gpp; pintar(); });
+  const toque = $('#gptoque'), svg = $('#gpsvg');
+  if(toque && svg && gp.d){
+    const d = gp.d, T = gpTramo(), ids = gpIds(d);
+    const ver = ev => {
+      const r = svg.getBoundingClientRect(), x = (ev.clientX - r.left) / r.width * 340;
+      let mejor=T.i0, dm=Infinity;
+      const ms = iso => { const p=iso.split('-'); return new Date(+p[0],+p[1]-1,+p[2]).getTime(); };
+      const t0 = ms(T.limIso), span = Math.max(1, ms(T.fin)-t0);
+      for(let i=T.i0;i<=T.i1;i++){ const xi = 40 + (ms(d.dias[i])-t0)/span*260; const dd=Math.abs(xi-x); if(dd<dm){ dm=dd; mejor=i; } }
+      const xi = 40 + (ms(d.dias[mejor])-t0)/span*260, cur=$('#gpcur');
+      cur.setAttribute('x1',xi.toFixed(1)); cur.setAttribute('x2',xi.toFixed(1)); cur.style.display='';
+      $('#gplee').textContent = gpDiaTxt(d.dias[mejor])+': '+ids.map(id=>`${d.gasolineras[id]} ${gpNum(gpVigente(d.precios[id],mejor),3)}`).join(' · ')+` · Brent ${gpNum(gpVigente(d.brent,mejor),1)} €`;
+    };
+    toque.addEventListener('pointerdown', ver); toque.addEventListener('pointermove', e=>{ if(e.buttons||e.pointerType==='touch') ver(e); });
+  }
+}
+function ajGasoil(){
+  const est = gp.d ? `Últimos datos: ${hace(gp.t)}.` : 'Todavía no se ha traído nada.';
+  abrirHoja(`${ajCabecera('Precio del gasoil')}
+    <p class="nota" style="margin-top:0">Dirección web del script «Estudio precios gasoil» y su clave (sale en la pestaña Registro de esa hoja). Es aparte del puente con Drive.</p>
+    <label class="f" for="gu">Dirección del script del gasoil</label><input id="gu" value="${esc(cfg.gUrl||'')}" placeholder="https://script.google.com/macros/s/.../exec" autocomplete="off">
+    <label class="f" for="gk">Clave</label><input id="gk" value="${esc(cfg.gClave||'')}" autocomplete="off">
+    <p class="nota">${esc(est)}${gp.error?' Último error: '+esc(gp.error)+'.':''} La app los pide al abrirse, como mucho cada 3 horas.</p>
+    <div class="err" id="err"></div>
+    <div class="acciones"><button id="no">Cancelar</button><button class="ok" id="si">Guardar y probar</button></div>`,()=>{
+      $('#ajvolver').onclick=()=>hojaAjustes();
+      $('#no').onclick=()=>cerrarHoja();
+      $('#si').onclick=async()=>{
+        const u=$('#gu').value.trim(), k=$('#gk').value.trim();
+        if(!/^https:\/\/script\.google\.com\/macros\/s\/.+\/exec$/.test(u)){ $('#err').textContent='La dirección debe empezar por https://script.google.com/macros/s/ y acabar en /exec.'; return; }
+        if(!k){ $('#err').textContent='Pega la clave.'; return; }
+        const antes = {u:cfg.gUrl, k:cfg.gClave};
+        cfg.gUrl=u; cfg.gClave=k;
+        $('#si').disabled=true; $('#err').textContent='Probando…';
+        try{
+          await pedirGasoil(true);
+          try{ localStorage.setItem(CFG, JSON.stringify(cfg)); }catch(e){}
+          cerrarHoja(); toast('Conectado al precio del gasoil'); pintar();
+        }catch(e){
+          cfg.gUrl=antes.u; cfg.gClave=antes.k;
+          $('#err').textContent='No funciona: '+(e.message||e)+'. No se ha guardado.'; $('#si').disabled=false;
+        }
+      };
+  });
+}
+
 /* ---------- novedades de la versión ---------- */
 const NOVEDADES = [
+  'Precio del gasoil en Combustible, debajo del depósito: precio de Cáseda, Sangüesa y Sos, la señal de la regla del Brent, un gráfico de 1 mes, 3 meses o 1 año (con el Brent en gris) y la opinión de la IA (tócala para leerla entera).',
+  'Cuando el depósito de la bajera baja al 25 % o menos, sale un aviso en Avisos con la señal del día. Cuenta en el numerito de la campana.',
+  'Se conecta en Ajustes → Precio del gasoil, con la dirección y la clave del script del gasoil. La app pide los datos al abrirse, como mucho cada 3 horas.'
+];
+const NOVEDADES_1423 = [
   'Dos móviles: al abrir la app con internet, si Drive tiene datos más nuevos (por ejemplo, del otro móvil) y este no tiene nada sin subir, se pone al día solo.',
   'Si has apuntado en los dos móviles, la app ya no pisa los datos de Drive: te pregunta cuáles se quedan. Mientras no elijas, la nube dice que hay que elegir.',
   'Un móvil nuevo o vacío ya no puede borrar la copia de Drive al guardar la conexión: pregunta antes.'
@@ -4369,6 +4568,7 @@ const campanaISO = () => { const d=new Date(campanaDesdeMs()); return `${d.getFu
 /* ---- Ajustes por secciones ---- */
 const AJ_SECCIONES = [
   ['drive','Puente con Drive','Dirección, clave, subir y recuperar'],
+  ['gp','Precio del gasoil','Dirección y clave del script del gasoil'],
   ['importar','Importar datos','Cargar órdenes de un archivo JSON'],
   ['noti','Notificación de sesión abierta',null],
   ['pos','Posición',null],
@@ -4379,7 +4579,7 @@ const AJ_SECCIONES = [
 function ajCabecera(tit){ return `<div class="ajcab"><button id="ajvolver" aria-label="Volver a Ajustes">‹ Ajustes</button><h3>${tit}</h3></div>`; }
 function hojaAjustes(sec){
   if(!sec) return ajMenu();
-  ({drive:ajDrive, importar:ajImportar, noti:ajNoti, pos:ajPos, avisos:ajAvisos, campana:ajCampana, nov:ajNov})[sec]();
+  ({drive:ajDrive, gp:ajGasoil, importar:ajImportar, noti:ajNoti, pos:ajPos, avisos:ajAvisos, campana:ajCampana, nov:ajNov})[sec]();
 }
 function ajMenu(){
   const sub = id => id==='noti' ? (S.notiSesion && notiPermiso()==='granted' ? 'Activada' : 'Desactivada') : id==='pos' ? (S.posActiva ? 'Activada' : 'Desactivada') : null;
@@ -5089,6 +5289,9 @@ if('serviceWorker' in navigator){
 /* si se quitó la notificación deslizando, vuelve al abrir la app */
 document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='visible'){ notiSesion(true); setTimeout(comprobarOlvidada, 600); } });
 setTimeout(()=>comprobarDrive(true), 1500);
+setTimeout(()=>pedirGasoilCallado(), 2500);
+document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='visible') pedirGasoilCallado(); });
+window.addEventListener('online', ()=>pedirGasoilCallado());
 setTimeout(comprobarOlvidada, 1200);
 try{
   if(localStorage.getItem('mant-app-version')!==VERSION_APP){
