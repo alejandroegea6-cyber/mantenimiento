@@ -569,7 +569,7 @@ const SECCIONES = [
 
 const H = 3600000;
 const CLAVE = 'mant-app-v1';
-const VERSION_APP = '1.4.2.4';
+const VERSION_APP = '1.4.2.5';
 
 function estadoInicial(){
   return {
@@ -3267,19 +3267,52 @@ async function pedirGasoil(forzar){
   if(!forzar && gp.tError && Date.now()-gp.tError < 10*60*1000) return false;
   if(typeof navigator!=='undefined' && navigator.onLine===false) return false;
   gpPidiendo = true;
+  let j;
   try{
-    const r = await fetch(cfg.gUrl, {method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body:JSON.stringify({accion:'datos', clave:cfg.gClave})});
-    const j = await r.json();
-    if(!j.ok) throw new Error(j.error || 'Error desconocido');
-    const antes = gp.d && gp.d.generado;
-    gp = {t:Date.now(), d:j, error:null, tError:null}; gpGuardar();
-    if(seccion==='gasoil') pintar(); else pintarNav();
-    return antes!==j.generado || true;
+    j = await gpPost(cfg.gUrl, cfg.gClave);
   }catch(e){
+    gpPidiendo = false;
     gp.error = String(e && e.message || e); gp.tError = Date.now(); gpGuardar();
     if(seccion==='gasoil') pintar();
     throw e;
-  }finally{ gpPidiendo = false; }
+  }
+  gpPidiendo = false;
+  gp = {t:Date.now(), d:j, error:null, tError:null}; gpGuardar();
+  if(seccion==='gasoil') pintar(); else pintarNav();
+  return true;
+}
+/* 1.4.2.5: llamadas con tiempo máximo (45 s) y mensajes que se entienden */
+async function gpFetch(url, opc, ms){
+  const ctl = (typeof AbortController!=='undefined') ? new AbortController() : null;
+  const t = ctl ? setTimeout(()=>ctl.abort(), ms||45000) : null;
+  try{ return await fetch(url, Object.assign({}, opc, ctl?{signal:ctl.signal}:{} , {redirect:'follow', cache:'no-store'})); }
+  catch(e){ if(e && e.name==='AbortError') throw new Error('el script tarda demasiado en contestar'); throw new Error('no llega a Google ('+(e && e.message || e)+')'); }
+  finally{ if(t) clearTimeout(t); }
+}
+async function gpPost(url, clave){
+  const r = await gpFetch(url, {method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body:JSON.stringify({accion:'datos', clave})});
+  const txt = await r.text();
+  let j; try{ j = JSON.parse(txt); }catch(e){ throw new Error('el script no ha devuelto datos (respuesta '+r.status+')'); }
+  if(!j.ok) throw new Error(j.error || 'error desconocido del script');
+  return j;
+}
+/* limpia lo pegado: espacios, saltos, caracteres invisibles y el envoltorio de Google (google.com/url?q=…) */
+function gpLimpiaUrl(txt){
+  let t = String(txt||'').replace(/[\u200B-\u200D\u2060\uFEFF\u00A0\s]+/g,'');
+  try{ const m = t.match(/[?&]q=([^&]+)/); if(m && /google\.[a-z.]+\/url/i.test(t)) t = decodeURIComponent(m[1]); }catch(e){}
+  const m2 = t.match(/https:\/\/script\.google\.com\/(?:a\/[^/]+\/)?macros\/s\/[A-Za-z0-9_-]+\/exec/);
+  return m2 ? m2[0] : t;
+}
+const gpLimpiaClave = txt => String(txt||'').replace(/[\u200B-\u200D\u2060\uFEFF\u00A0\s]+/g,'');
+/* prueba en dos pasos para saber dónde falla */
+async function gpProbar(url, clave){
+  try{
+    const r = await gpFetch(url, {method:'GET'}, 30000);
+    const txt = await r.text(); let j=null; try{ j=JSON.parse(txt); }catch(e){}
+    if(!j || !j.ok) throw new Error('la dirección no es la del script del gasoil (respuesta '+r.status+')');
+  }catch(e){ throw new Error('Paso 1 de 2 (llegar al script): '+(e.message||e)); }
+  try{ return await gpPost(url, clave); }
+  catch(e){ throw new Error('Paso 2 de 2 (pedir los datos): '+(e.message||e)); }
 }
 function pedirGasoilCallado(forzar){ pedirGasoil(forzar).catch(()=>{}); }
 
@@ -3392,27 +3425,34 @@ function ajGasoil(){
   const est = gp.d ? `Últimos datos: ${hace(gp.t)}.` : 'Todavía no se ha traído nada.';
   abrirHoja(`${ajCabecera('Precio del gasoil')}
     <p class="nota" style="margin-top:0">Dirección web del script «Estudio precios gasoil» y su clave (sale en la pestaña Registro de esa hoja). Es aparte del puente con Drive.</p>
-    <label class="f" for="gu">Dirección del script del gasoil</label><input id="gu" value="${esc(cfg.gUrl||'')}" placeholder="https://script.google.com/macros/s/.../exec" autocomplete="off">
-    <label class="f" for="gk">Clave</label><input id="gk" value="${esc(cfg.gClave||'')}" autocomplete="off">
+    <label class="f" for="gu">Dirección del script del gasoil</label><input id="gu" value="${esc(cfg.gUrl||'')}" placeholder="https://script.google.com/macros/s/.../exec" autocomplete="off" autocapitalize="off" spellcheck="false">
+    <label class="f" for="gk">Clave</label><input id="gk" value="${esc(cfg.gClave||'')}" autocomplete="off" autocapitalize="off" spellcheck="false">
     <p class="nota">${esc(est)}${gp.error?' Último error: '+esc(gp.error)+'.':''} La app los pide al abrirse, como mucho cada 3 horas.</p>
     <div class="err" id="err"></div>
-    <div class="acciones"><button id="no">Cancelar</button><button class="ok" id="si">Guardar y probar</button></div>`,()=>{
+    <div class="acciones"><button id="no">Cancelar</button><button class="ok" id="si">Guardar y probar</button></div>
+    <button class="chip" id="sinp" style="width:100%;margin-top:10px;display:none">Guardar sin probar (lo intentará al abrir la app)</button>`,()=>{
       $('#ajvolver').onclick=()=>hojaAjustes();
       $('#no').onclick=()=>cerrarHoja();
+      const leer = () => {
+        const u=gpLimpiaUrl($('#gu').value), k=gpLimpiaClave($('#gk').value);
+        $('#gu').value=u; $('#gk').value=k;
+        if(!/^https:\/\/script\.google\.com\/(a\/[^/]+\/)?macros\/s\/[A-Za-z0-9_-]+\/exec$/.test(u)){ $('#err').textContent='La dirección debe empezar por https://script.google.com/macros/s/ y acabar en /exec. Lo pegado empieza por: «'+u.slice(0,30)+'»'; return null; }
+        if(!k){ $('#err').textContent='Pega la clave.'; return null; }
+        return {u,k};
+      };
+      const guardar = (u,k) => { cfg.gUrl=u; cfg.gClave=k; try{ localStorage.setItem(CFG, JSON.stringify(cfg)); }catch(e){} };
+      $('#sinp').onclick=()=>{ const v=leer(); if(!v) return; guardar(v.u,v.k); gp.tError=null; gpGuardar(); cerrarHoja(); toast('Guardado sin probar'); pintar(); };
       $('#si').onclick=async()=>{
-        const u=$('#gu').value.trim(), k=$('#gk').value.trim();
-        if(!/^https:\/\/script\.google\.com\/macros\/s\/.+\/exec$/.test(u)){ $('#err').textContent='La dirección debe empezar por https://script.google.com/macros/s/ y acabar en /exec.'; return; }
-        if(!k){ $('#err').textContent='Pega la clave.'; return; }
-        const antes = {u:cfg.gUrl, k:cfg.gClave};
-        cfg.gUrl=u; cfg.gClave=k;
-        $('#si').disabled=true; $('#err').textContent='Probando…';
+        const v=leer(); if(!v) return;
+        $('#si').disabled=true; $('#err').textContent='Probando… (puede tardar unos segundos)';
         try{
-          await pedirGasoil(true);
-          try{ localStorage.setItem(CFG, JSON.stringify(cfg)); }catch(e){}
+          const j = await gpProbar(v.u, v.k);
+          guardar(v.u,v.k);
+          gp = {t:Date.now(), d:j, error:null, tError:null}; gpGuardar();
           cerrarHoja(); toast('Conectado al precio del gasoil'); pintar();
         }catch(e){
-          cfg.gUrl=antes.u; cfg.gClave=antes.k;
-          $('#err').textContent='No funciona: '+(e.message||e)+'. No se ha guardado.'; $('#si').disabled=false;
+          $('#err').textContent='No funciona. '+(e.message||e)+'. No se ha guardado.';
+          $('#si').disabled=false; $('#sinp').style.display='';
         }
       };
   });
@@ -3420,6 +3460,10 @@ function ajGasoil(){
 
 /* ---------- novedades de la versión ---------- */
 const NOVEDADES = [
+  'Precio del gasoil: al pegar la dirección y la clave, la app quita sola espacios, saltos de línea y caracteres invisibles. Si la prueba falla, dice en qué paso (llegar al script o pedir los datos) y deja guardar sin probar.',
+  'Arreglado: el botón «Actualizar ahora» ya no se queda en «Actualizando…» cuando los datos han llegado bien.'
+];
+const NOVEDADES_1424 = [
   'Precio del gasoil en Combustible, debajo del depósito: precio de Cáseda, Sangüesa y Sos, la señal de la regla del Brent, un gráfico de 1 mes, 3 meses o 1 año (con el Brent en gris) y la opinión de la IA (tócala para leerla entera).',
   'Cuando el depósito de la bajera baja al 25 % o menos, sale un aviso en Avisos con la señal del día. Cuenta en el numerito de la campana.',
   'Se conecta en Ajustes → Precio del gasoil, con la dirección y la clave del script del gasoil. La app pide los datos al abrirse, como mucho cada 3 horas.'
